@@ -2,22 +2,23 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Flash Math Multi-Digit</title>
+<title>Adaptive Flash Math</title>
 <style>
-  body { font-family: sans-serif; text-align: center; background: #f9fafc; }
-  h1 { margin-top: 10px; }
-  canvas { border: 2px solid #333; background: white; margin: 5px; touch-action: none; }
-  button { margin: 10px; padding: 10px 20px; font-size: 18px; }
-  .stats { margin: 15px; font-size: 18px; }
-  .digit-boxes { display: flex; justify-content: center; }
+body { font-family: sans-serif; text-align: center; background: #f9fafc; }
+h1 { margin-top: 10px; }
+canvas { border: 2px solid #333; background: white; margin: 5px; touch-action: none; }
+button { margin: 10px; padding: 10px 20px; font-size: 18px; }
+.stats { margin: 15px; font-size: 18px; }
+.digit-boxes { display: flex; justify-content: center; flex-wrap: wrap; }
 </style>
 </head>
 <body>
-<h1>Flash Math ✏️ (Multi-Digit)</h1>
+<h1>Adaptive Flash Math ✏️</h1>
 <div class="stats">
-  <span id="streak">Streak: 0</span> | 
-  <span id="xp">XP: 0</span>
+<span id="streak">Streak: 0</span> | 
+<span id="xp">XP: 0</span>
 </div>
+
 <h2 id="question">Loading...</h2>
 
 <div class="digit-boxes" id="digitBoxes"></div>
@@ -39,90 +40,102 @@ async function loadModel() {
 }
 loadModel();
 
-// Game state
 let streak = 0, xp = 0;
 let currentAnswer = 0;
 let recognizedDigits = [];
 
 const digitBoxesContainer = document.getElementById("digitBoxes");
 
+// Adaptive difficulty by grade (K–5)
+function getDifficulty() {
+  // You can change this or ask the user
+  return Math.floor(Math.random()*6); // 0=K, 5=5th
+}
+
 function newQuestion() {
-  let a = Math.floor(Math.random() * 20) + 1;
-  let b = Math.floor(Math.random() * 20) + 1;
-  let op = Math.random() < 0.5 ? "+" : "-";
-  if (op === "-" && b > a) [a, b] = [b, a];
-  currentAnswer = (op === "+") ? (a+b) : (a-b);
+  const grade = getDifficulty();
+  let maxNum = 10;
+  let operations = ["+", "-"];
+  if(grade <= 1) maxNum = 10;
+  else if(grade <=3) maxNum = 50;
+  else maxNum = 200;
+  if(grade>=4) operations.push("*");
+  
+  let op = operations[Math.floor(Math.random()*operations.length)];
+  let a = Math.floor(Math.random()*maxNum)+1;
+  let b = Math.floor(Math.random()*maxNum)+1;
+  if(op === "-" && b > a) [a,b]=[b,a]; // avoid negative
+  
+  currentAnswer = op === "+" ? a+b : op === "-" ? a-b : a*b;
+  
   document.getElementById("question").innerText = `${a} ${op} ${b} = ?`;
   recognizedDigits = [];
   createDigitBoxes(currentAnswer.toString().length);
   document.getElementById("feedback").innerText = "";
 }
 
-// Create canvas boxes dynamically
 function createDigitBoxes(count) {
   digitBoxesContainer.innerHTML = "";
-  for (let i = 0; i < count; i++) {
+  for(let i=0;i<count;i++){
     let c = document.createElement("canvas");
     c.width = 100; c.height = 100;
-    c.id = "canvas" + i;
-    c.style.touchAction = "none";
+    c.id = "canvas"+i;
     digitBoxesContainer.appendChild(c);
     initCanvas(c);
   }
 }
 
-function initCanvas(c) {
+function initCanvas(c){
   let ctx = c.getContext("2d");
   ctx.lineWidth = 20; ctx.lineCap = "round"; ctx.strokeStyle = "black";
   let drawing = false;
-  c.addEventListener("pointerdown", e => { drawing = true; draw(e, c, ctx); });
-  c.addEventListener("pointermove", e => { if(drawing) draw(e, c, ctx); });
-  c.addEventListener("pointerup", () => drawing = false);
-  c.addEventListener("pointerleave", () => drawing = false);
+  c.addEventListener("pointerdown", e=>{drawing=true;draw(e,c,ctx);});
+  c.addEventListener("pointermove", e=>{if(drawing) draw(e,c,ctx);});
+  c.addEventListener("pointerup", ()=>drawing=false);
+  c.addEventListener("pointerleave", ()=>drawing=false);
 }
 
-function draw(e, canvas, ctx) {
-  const rect = canvas.getBoundingClientRect();
-  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+function draw(e,c,ctx){
+  const rect = c.getBoundingClientRect();
+  ctx.lineTo(e.clientX-rect.left,e.clientY-rect.top);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  ctx.moveTo(e.clientX-rect.left,e.clientY-rect.top);
 }
 
-function clearAll() {
-  const canvases = digitBoxesContainer.querySelectorAll("canvas");
-  canvases.forEach(c => c.getContext("2d").clearRect(0,0,c.width,c.height));
-  recognizedDigits = [];
-  document.getElementById("recognized").innerText = "I read: …";
+function clearAll(){
+  document.querySelectorAll("canvas").forEach(c=>c.getContext("2d").clearRect(0,0,c.width,c.height));
+  recognizedDigits=[];
+  document.getElementById("recognized").innerText="I read: …";
 }
 
-async function recognizeAll() {
-  recognizedDigits = [];
-  const canvases = digitBoxesContainer.querySelectorAll("canvas");
-  for (let c of canvases) {
+async function recognizeAll(){
+  recognizedDigits=[];
+  const canvases = document.querySelectorAll("canvas");
+  for(let c of canvases){
     let imgData = c.getContext("2d").getImageData(0,0,c.width,c.height);
-    let gray = tf.browser.fromPixels(imgData, 1);
-    let resized = tf.image.resizeBilinear(gray, [28,28]).toFloat().expandDims(0).div(255.0);
+    let gray = tf.browser.fromPixels(imgData,1);
+    let resized = tf.image.resizeBilinear(gray,[28,28]).toFloat().expandDims(0).div(255.0);
     let pred = model.predict(resized).dataSync();
     let digit = pred.indexOf(Math.max(...pred));
     recognizedDigits.push(digit);
     gray.dispose(); resized.dispose();
   }
-  document.getElementById("recognized").innerText = "I read: " + recognizedDigits.join("");
+  document.getElementById("recognized").innerText="I read: "+recognizedDigits.join("");
 }
 
-function submitAll() {
-  recognizeAll().then(() => {
+function submitAll(){
+  recognizeAll().then(()=>{
     let guess = parseInt(recognizedDigits.join(""));
-    if (guess === currentAnswer) {
-      streak++; xp +=5;
-      document.getElementById("feedback").innerText = "✅ Correct!";
-    } else {
-      streak = 0; xp = Math.max(0, xp-1);
-      document.getElementById("feedback").innerText = "❌ Try again!";
+    if(guess===currentAnswer){
+      streak++; xp+=5;
+      document.getElementById("feedback").innerText="✅ Correct!";
+    }else{
+      streak=0; xp=Math.max(0,xp-1);
+      document.getElementById("feedback").innerText="❌ Try again!";
     }
-    document.getElementById("streak").innerText = "Streak: " + streak;
-    document.getElementById("xp").innerText = "XP: " + xp;
+    document.getElementById("streak").innerText="Streak: "+streak;
+    document.getElementById("xp").innerText="XP: "+xp;
     newQuestion();
   });
 }
