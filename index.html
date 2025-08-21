@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cozy Math Adventure</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    font-family: "Comic Sans MS", cursive, sans-serif;
+    background: url('https://via.placeholder.com/800x600/87CEEB/FFFFFF?text=Sky') no-repeat center center fixed;
+    background-size: cover;
+  }
+
+  #game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .background-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  /* Pet images */
+  .pet {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+  }
+
+  #cat {
+    bottom: 20px;
+    left: 30px;
+  }
+
+  #dragon {
+    bottom: 20px;
+    right: 30px;
+  }
+
+  /* Decorations */
+  .decoration {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+  }
+
+  #flower {
+    bottom: 50px;
+    left: 200px;
+  }
+
+  #gem {
+    bottom: 50px;
+    right: 200px;
+  }
+
+  #cloud {
+    top: 50px;
+    left: 100px;
+    width: 100px;
+    height: 50px;
+  }
+
+  /* Math question box */
+  #math-box {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255,255,255,0.9);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+  }
+
+  #answer-input {
+    width: 50px;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <!-- Pets -->
+  <img src="https://via.placeholder.com/80x80/FFD700/000000?text=Cat" id="cat" class="pet" alt="Cat">
+  <img src="https://via.placeholder.com/80x80/FF4500/FFFFFF?text=Dragon" id="dragon" class="pet" alt="Dragon">
+
+  <!-- Decorations -->
+  <img src="https://via.placeholder.com/50x50/FF69B4/FFFFFF?text=Flower" id="flower" class="decoration" alt="Flower">
+  <img src="https://via.placeholder.com/50x50/8A2BE2/FFFFFF?text=Gem" id="gem" class="decoration" alt="Gem">
+  <img src="https://via.placeholder.com/100x50/FFFFFF/87CEEB?text=Cloud" id="cloud" class="decoration" alt="Cloud">
+
+  <!-- Math box -->
+  <div id="math-box">
+    <div id="question">5 + 3 = ?</div>
+    <input type="number" id="answer-input">
+    <button id="submit-answer">Submit</button>
+    <div id="feedback"></div>
+  </div>
+</div>
+
+<script>
+const questionEl = document.getElementById('question');
+const answerInput = document.getElementById('answer-input');
+const feedbackEl = document.getElementById('feedback');
+
+const questions = [
+  { q: '5 + 3 = ?', a: 8 },
+  { q: '2 x 4 = ?', a: 8 },
+  { q: '10 - 6 = ?', a: 4 },
+  { q: '9 ÷ 3 = ?', a: 3 }
+];
+
+let currentQuestion = 0;
+
+function loadQuestion() {
+  questionEl.textContent = questions[currentQuestion].q;
+  answerInput.value = '';
+  feedbackEl.textContent = '';
+}
+
+document.getElementById('submit-answer').addEventListener('click', () => {
+  const userAnswer = parseInt(answerInput.value);
+  if(userAnswer === questions[currentQuestion].a){
+    feedbackEl.textContent = "Correct! 🎉";
+    currentQuestion = (currentQuestion + 1) % questions.length;
+    setTimeout(loadQuestion, 1000);
+  } else {
+    feedbackEl.textContent = "Try again! ❌";
+  }
+});
+
+// Initial load
+loadQuestion();
+</script>
+
+</body>
+</html>
