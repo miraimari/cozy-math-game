@@ -1,111 +1,131 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Flash Math (Web)</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #f9fafc; }
-    h1 { margin-top: 10px; }
-    #canvas { border: 2px solid #333; background: white; touch-action: none; }
-    button { margin: 10px; padding: 10px 20px; font-size: 18px; }
-    .stats { margin: 15px; font-size: 18px; }
-  </style>
+<meta charset="UTF-8">
+<title>Flash Math Multi-Digit</title>
+<style>
+  body { font-family: sans-serif; text-align: center; background: #f9fafc; }
+  h1 { margin-top: 10px; }
+  canvas { border: 2px solid #333; background: white; margin: 5px; touch-action: none; }
+  button { margin: 10px; padding: 10px 20px; font-size: 18px; }
+  .stats { margin: 15px; font-size: 18px; }
+  .digit-boxes { display: flex; justify-content: center; }
+</style>
 </head>
 <body>
-  <h1>Flash Math ✏️</h1>
-  <div class="stats">
-    <span id="streak">Streak: 0</span> | 
-    <span id="xp">XP: 0</span>
-  </div>
-  <h2 id="question">Loading...</h2>
-  
-  <canvas id="canvas" width="280" height="280"></canvas><br>
-  <button onclick="clearCanvas()">Clear</button>
-  <button onclick="recognize()">Read</button>
-  <button onclick="submit()">Submit</button>
-  
-  <h3 id="recognized">I read: …</h3>
-  <h3 id="feedback"></h3>
-  
-  <!-- TensorFlow.js -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.18.0/dist/tf.min.js"></script>
-  
-  <script>
-    let canvas = document.getElementById("canvas");
-    let ctx = canvas.getContext("2d");
-    ctx.lineWidth = 20;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "black";
-    
-    let drawing = false;
-    canvas.addEventListener("pointerdown", e => { drawing = true; draw(e); });
-    canvas.addEventListener("pointermove", e => { if (drawing) draw(e); });
-    canvas.addEventListener("pointerup", () => drawing = false);
-    canvas.addEventListener("pointerleave", () => drawing = false);
-    
-    function draw(e) {
-      const rect = canvas.getBoundingClientRect();
-      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+<h1>Flash Math ✏️ (Multi-Digit)</h1>
+<div class="stats">
+  <span id="streak">Streak: 0</span> | 
+  <span id="xp">XP: 0</span>
+</div>
+<h2 id="question">Loading...</h2>
+
+<div class="digit-boxes" id="digitBoxes"></div>
+
+<button onclick="clearAll()">Clear All</button>
+<button onclick="recognizeAll()">Read</button>
+<button onclick="submitAll()">Submit</button>
+
+<h3 id="recognized">I read: …</h3>
+<h3 id="feedback"></h3>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.18.0/dist/tf.min.js"></script>
+
+<script>
+let model;
+async function loadModel() {
+  model = await tf.loadLayersModel("https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json");
+  newQuestion();
+}
+loadModel();
+
+// Game state
+let streak = 0, xp = 0;
+let currentAnswer = 0;
+let recognizedDigits = [];
+
+const digitBoxesContainer = document.getElementById("digitBoxes");
+
+function newQuestion() {
+  let a = Math.floor(Math.random() * 20) + 1;
+  let b = Math.floor(Math.random() * 20) + 1;
+  let op = Math.random() < 0.5 ? "+" : "-";
+  if (op === "-" && b > a) [a, b] = [b, a];
+  currentAnswer = (op === "+") ? (a+b) : (a-b);
+  document.getElementById("question").innerText = `${a} ${op} ${b} = ?`;
+  recognizedDigits = [];
+  createDigitBoxes(currentAnswer.toString().length);
+  document.getElementById("feedback").innerText = "";
+}
+
+// Create canvas boxes dynamically
+function createDigitBoxes(count) {
+  digitBoxesContainer.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    let c = document.createElement("canvas");
+    c.width = 100; c.height = 100;
+    c.id = "canvas" + i;
+    c.style.touchAction = "none";
+    digitBoxesContainer.appendChild(c);
+    initCanvas(c);
+  }
+}
+
+function initCanvas(c) {
+  let ctx = c.getContext("2d");
+  ctx.lineWidth = 20; ctx.lineCap = "round"; ctx.strokeStyle = "black";
+  let drawing = false;
+  c.addEventListener("pointerdown", e => { drawing = true; draw(e, c, ctx); });
+  c.addEventListener("pointermove", e => { if(drawing) draw(e, c, ctx); });
+  c.addEventListener("pointerup", () => drawing = false);
+  c.addEventListener("pointerleave", () => drawing = false);
+}
+
+function draw(e, canvas, ctx) {
+  const rect = canvas.getBoundingClientRect();
+  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+}
+
+function clearAll() {
+  const canvases = digitBoxesContainer.querySelectorAll("canvas");
+  canvases.forEach(c => c.getContext("2d").clearRect(0,0,c.width,c.height));
+  recognizedDigits = [];
+  document.getElementById("recognized").innerText = "I read: …";
+}
+
+async function recognizeAll() {
+  recognizedDigits = [];
+  const canvases = digitBoxesContainer.querySelectorAll("canvas");
+  for (let c of canvases) {
+    let imgData = c.getContext("2d").getImageData(0,0,c.width,c.height);
+    let gray = tf.browser.fromPixels(imgData, 1);
+    let resized = tf.image.resizeBilinear(gray, [28,28]).toFloat().expandDims(0).div(255.0);
+    let pred = model.predict(resized).dataSync();
+    let digit = pred.indexOf(Math.max(...pred));
+    recognizedDigits.push(digit);
+    gray.dispose(); resized.dispose();
+  }
+  document.getElementById("recognized").innerText = "I read: " + recognizedDigits.join("");
+}
+
+function submitAll() {
+  recognizeAll().then(() => {
+    let guess = parseInt(recognizedDigits.join(""));
+    if (guess === currentAnswer) {
+      streak++; xp +=5;
+      document.getElementById("feedback").innerText = "✅ Correct!";
+    } else {
+      streak = 0; xp = Math.max(0, xp-1);
+      document.getElementById("feedback").innerText = "❌ Try again!";
     }
-    
-    function clearCanvas() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      document.getElementById("recognized").innerText = "I read: …";
-    }
-    
-    // TensorFlow.js MNIST model
-    let model;
-    async function loadModel() {
-      model = await tf.loadLayersModel("https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json");
-      newQuestion();
-    }
-    loadModel();
-    
-    let currentAnswer = 0, streak = 0, xp = 0, recognizedDigits = "";
-    
-    function newQuestion() {
-      let a = Math.floor(Math.random() * 10) + 1;
-      let b = Math.floor(Math.random() * 10) + 1;
-      let op = Math.random() < 0.5 ? "+" : "-";
-      if (op === "-" && b > a) [a, b] = [b, a];
-      currentAnswer = (op === "+") ? (a + b) : (a - b);
-      document.getElementById("question").innerText = `${a} ${op} ${b} = ?`;
-      document.getElementById("feedback").innerText = "";
-      clearCanvas();
-    }
-    
-    async function recognize() {
-      // Grab image data
-      let imgData = ctx.getImageData(0, 0, 280, 280);
-      // Convert to grayscale
-      let gray = tf.browser.fromPixels(imgData, 1);
-      let resized = tf.image.resizeBilinear(gray, [28, 28]).toFloat();
-      let tensor = resized.expandDims(0).div(255.0);
-      // Predict
-      let pred = model.predict(tensor).dataSync();
-      let digit = pred.indexOf(Math.max(...pred));
-      recognizedDigits = digit.toString();
-      document.getElementById("recognized").innerText = "I read: " + recognizedDigits;
-      gray.dispose(); resized.dispose(); tensor.dispose();
-    }
-    
-    function submit() {
-      if (parseInt(recognizedDigits) === currentAnswer) {
-        streak++; xp += 5;
-        document.getElementById("feedback").innerText = "✅ Correct!";
-      } else {
-        streak = 0; xp = Math.max(0, xp - 1);
-        document.getElementById("feedback").innerText = "❌ Try again!";
-      }
-      document.getElementById("streak").innerText = "Streak: " + streak;
-      document.getElementById("xp").innerText = "XP: " + xp;
-      newQuestion();
-    }
-  </script>
+    document.getElementById("streak").innerText = "Streak: " + streak;
+    document.getElementById("xp").innerText = "XP: " + xp;
+    newQuestion();
+  });
+}
+</script>
 </body>
 </html>
-
