@@ -8,52 +8,64 @@
   body {
     font-family: Arial, sans-serif;
     text-align: center;
-    margin: 20px;
-    font-size: 24px;
-  }
-  input, select, button {
-    font-size: 24px;
-    padding: 12px;
     margin: 10px;
+    font-size: 20px;
   }
+
+  input, select, button {
+    font-size: 20px;
+    padding: 10px;
+    margin: 8px 0;
+  }
+
   #question {
-    font-size: 36px;
-    margin-top: 30px;
-  }
-  #feedback {
-    font-size: 32px;
-    font-weight: bold;
-    margin-top: 20px;
-    color: green;
-  }
-  #wrongFeedback {
     font-size: 28px;
-    font-weight: bold;
     margin-top: 20px;
-    color: red;
+    word-wrap: break-word;
   }
+
+  #feedback, #wrongFeedback {
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 15px;
+  }
+
+  #feedback { color: green; }
+  #wrongFeedback { color: red; }
+
   #score {
-    font-size: 28px;
-    margin-top: 20px;
+    font-size: 22px;
+    margin-top: 15px;
   }
+
   #keypad {
-    display: inline-block;
-    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 15px;
   }
-  #keypad div {
-    margin-bottom: 10px;
-  }
+
   #keypad button {
-    width: 80px;
-    height: 80px;
-    font-size: 32px;
+    flex: 1 1 30%;
+    min-width: 60px;
+    height: 60px;
+    font-size: 24px;
     margin: 5px;
     cursor: pointer;
+    border-radius: 8px;
   }
+
   #answerInput {
-    width: 150px;
+    width: 60%;
     text-align: center;
-    font-size: 28px;
+    font-size: 24px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 400px) {
+    #question { font-size: 24px; }
+    #answerInput { font-size: 20px; width: 70%; }
+    #keypad button { height: 50px; font-size: 20px; }
   }
 </style>
 </head>
@@ -61,7 +73,6 @@
 
 <h1>Cozy Math Game</h1>
 
-<!-- Start Screen -->
 <div id="startScreen">
   <input type="text" id="playerName" placeholder="Enter your name"><br>
   <select id="mode">
@@ -73,32 +84,23 @@
   <button id="startBtn">Start Game</button>
 </div>
 
-<!-- Game Screen -->
 <div id="gameScreen" style="display:none;">
   <div id="question"></div>
   <input type="text" id="answerInput" readonly placeholder="Your answer"><br>
 
   <div id="keypad">
-    <div>
-      <button class="numBtn">1</button>
-      <button class="numBtn">2</button>
-      <button class="numBtn">3</button>
-    </div>
-    <div>
-      <button class="numBtn">4</button>
-      <button class="numBtn">5</button>
-      <button class="numBtn">6</button>
-    </div>
-    <div>
-      <button class="numBtn">7</button>
-      <button class="numBtn">8</button>
-      <button class="numBtn">9</button>
-    </div>
-    <div>
-      <button id="clearBtn">C</button>
-      <button class="numBtn">0</button>
-      <button id="submitBtn">✔</button>
-    </div>
+    <button class="numBtn">1</button>
+    <button class="numBtn">2</button>
+    <button class="numBtn">3</button>
+    <button class="numBtn">4</button>
+    <button class="numBtn">5</button>
+    <button class="numBtn">6</button>
+    <button class="numBtn">7</button>
+    <button class="numBtn">8</button>
+    <button class="numBtn">9</button>
+    <button id="clearBtn">Clear</button>
+    <button class="numBtn">0</button>
+    <button id="submitBtn">Submit</button>
   </div>
 
   <div id="feedback"></div>
