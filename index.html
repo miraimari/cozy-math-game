@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Handwriting Math Game</title>
+<title>Multi-Digit Handwriting Math Game</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-  h1 { color: #333; }
-  canvas { border: 2px solid black; margin-top: 10px; touch-action: none; background: #f9f9f9; }
+  canvas { border: 2px solid black; margin-top: 10px; background: #f9f9f9; touch-action: none; }
   button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
   #result { font-size: 18px; margin-top: 10px; }
 </style>
@@ -22,14 +21,21 @@
 <button id="submitBtn">Submit</button>
 <div id="result"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.0.0/dist/tf.min.js"></script>
 <script>
 let canvas = document.getElementById('canvas');
 let ctx = canvas.getContext('2d');
 let drawing = false;
 let answer = 0;
+let model;
 
-// Generate a random arithmetic problem
+// Load MNIST model
+async function loadModel() {
+    model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json');
+    generateQuestion();
+}
+
+// Generate random arithmetic problem (multi-digit allowed)
 function generateQuestion() {
     let a = Math.floor(Math.random() * 50) + 1;
     let b = Math.floor(Math.random() * 50) + 1;
@@ -47,7 +53,7 @@ function generateQuestion() {
     document.getElementById('result').innerText = '';
 }
 
-// Canvas drawing functions
+// Canvas drawing
 function startDrawing(e) { drawing = true; draw(e); }
 function stopDrawing() { drawing = false; ctx.beginPath(); }
 function draw(e) {
@@ -64,44 +70,9 @@ function draw(e) {
     ctx.beginPath();
     ctx.moveTo(x, y);
 }
-
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
 }
 
-// Check answer using Tesseract.js
-function checkAnswer() {
-    let dataURL = canvas.toDataURL('image/png');
-    document.getElementById('result').innerText = 'Checking...';
-    
-    Tesseract.recognize(dataURL, 'eng', { logger: m => console.log(m) })
-        .then(({ data: { text } }) => {
-            let userAnswer = text.replace(/\D/g,''); // Remove non-digit characters
-            console.log("Recognized:", userAnswer);
-            if (parseInt(userAnswer) === answer) {
-                document.getElementById('result').innerText = 'Correct! 🎉';
-            } else {
-                document.getElementById('result').innerText = `Oops! The correct answer was ${answer}.`;
-            }
-            generateQuestion();
-        });
-}
-
-// Event listeners
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseleave', stopDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('touchstart', startDrawing);
-canvas.addEventListener('touchend', stopDrawing);
-canvas.addEventListener('touchmove', draw);
-document.getElementById('clearBtn').addEventListener('click', clearCanvas);
-document.getElementById('submitBtn').addEventListener('click', checkAnswer);
-
-// Start the game
-generateQuestion();
-</script>
-
-</body>
-</html>
+// Recognize digits
