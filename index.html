@@ -5,67 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cozy Math Game</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 5px;
-    font-size: 18px;
-  }
-
-  input, select, button {
-    font-size: 18px;
-    padding: 8px;
-    margin: 5px 0;
-  }
-
-  #question {
-    font-size: 24px;
-    margin-top: 15px;
-    word-wrap: break-word;
-  }
-
-  #feedback, #wrongFeedback {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-  }
-
+  body { font-family: Arial, sans-serif; text-align: center; margin: 5px; font-size: 18px; }
+  input, select, button { font-size: 18px; padding: 8px; margin: 5px 0; }
+  #question { font-size: 24px; margin-top: 15px; word-wrap: break-word; }
+  #feedback, #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 10px; }
   #feedback { color: green; }
   #wrongFeedback { color: red; }
-
-  #score, #streak, #dailyScore {
-    font-size: 18px;
-    margin-top: 10px;
-  }
-
-  #keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px; /* very small */
-    justify-items: center;
-    margin-top: 10px;
-  }
-
-  #keypad button {
-    width: 80px;
-    height: 60px;
-    font-size: 24px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-
-  #answerInput {
-    width: 70%;
-    text-align: center;
-    font-size: 20px;
-    margin-top: 10px;
-  }
-
-  @media (max-width: 400px) {
-    #question { font-size: 20px; }
-    #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 60px; height: 50px; font-size: 20px; }
-  }
+  #score, #streak, #dailyScore { font-size: 18px; margin-top: 10px; }
+  #keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; justify-items: center; margin-top: 10px; }
+  #keypad button { width: 80px; height: 60px; font-size: 24px; border-radius: 8px; cursor: pointer; }
+  #answerInput { width: 70%; text-align: center; font-size: 20px; margin-top: 10px; }
+  @media (max-width: 400px) { #question { font-size: 20px; } #answerInput { font-size: 18px; width: 80%; } #keypad button { width: 60px; height: 50px; font-size: 20px; } }
 </style>
 </head>
 <body>
@@ -79,7 +29,7 @@
     <option value="subtraction">Subtraction only</option>
     <option value="mixed">Mixed</option>
   </select><br>
-  <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
+  <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number"><br>
   <button id="startBtn">Start Game</button><br>
   <button id="topScoresBtn">Top Scores</button><br>
   <div id="streakInfo"></div>
@@ -90,18 +40,10 @@
   <input type="text" id="answerInput" readonly placeholder="Your answer"><br>
 
   <div id="keypad">
-    <button class="numBtn">1</button>
-    <button class="numBtn">2</button>
-    <button class="numBtn">3</button>
-    <button class="numBtn">4</button>
-    <button class="numBtn">5</button>
-    <button class="numBtn">6</button>
-    <button class="numBtn">7</button>
-    <button class="numBtn">8</button>
-    <button class="numBtn">9</button>
-    <button id="clearBtn">Clear</button>
-    <button class="numBtn">0</button>
-    <button id="submitBtn">Submit</button>
+    <button class="numBtn">1</button><button class="numBtn">2</button><button class="numBtn">3</button>
+    <button class="numBtn">4</button><button class="numBtn">5</button><button class="numBtn">6</button>
+    <button class="numBtn">7</button><button class="numBtn">8</button><button class="numBtn">9</button>
+    <button id="clearBtn">Clear</button><button class="numBtn">0</button><button id="submitBtn">Submit</button>
   </div>
 
   <div id="feedback"></div>
@@ -112,20 +54,14 @@
 </div>
 
 <div id="topScoresScreen" style="display:none;">
-  <h2>Top Scores</h2>
+  <h2>Top Scores Leaderboard</h2>
   <div id="highScoresList"></div>
   <button id="backToStartBtn">Back</button>
 </div>
 
 <script>
-let playerName = '';
-let mode = 'addition';
-let maxNumber = 20;
-let score = 0; // per game
-let dailyScore = 0;
-let answer = 0;
-let streak = 0;
-let lastPlayDate = null;
+let playerName = '', mode = 'addition', maxNumber = 20;
+let score = 0, dailyScore = 0, answer = 0, streak = 0, lastPlayDate = null;
 
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
@@ -138,48 +74,39 @@ const dailyScoreEl = document.getElementById('dailyScore');
 const answerInput = document.getElementById('answerInput');
 const streakInfo = document.getElementById('streakInfo');
 
-function getToday() {
-  const d = new Date();
-  return d.toISOString().split('T')[0]; // YYYY-MM-DD
-}
+function getToday() { return new Date().toISOString().split('T')[0]; }
 
-// Load streak and daily score
 function loadPlayerData() {
-  streak = Number(localStorage.getItem('streak') || 0);
-  lastPlayDate = localStorage.getItem('lastPlayDate');
-  const savedDailyDate = localStorage.getItem('dailyScoreDate');
+  streak = Number(localStorage.getItem('streak_' + playerName) || 0);
+  lastPlayDate = localStorage.getItem('lastPlayDate_' + playerName);
+  const savedDailyDate = localStorage.getItem('dailyScoreDate_' + playerName);
   if (savedDailyDate !== getToday()) {
     dailyScore = 0;
-    localStorage.setItem('dailyScoreDate', getToday());
+    localStorage.setItem('dailyScoreDate_' + playerName, getToday());
   } else {
-    dailyScore = Number(localStorage.getItem('dailyScore') || 0);
+    dailyScore = Number(localStorage.getItem('dailyScore_' + playerName) || 0);
   }
 }
 
 function savePlayerData() {
-  localStorage.setItem('streak', streak);
-  localStorage.setItem('lastPlayDate', lastPlayDate);
-  localStorage.setItem('dailyScore', dailyScore);
-  localStorage.setItem('dailyScoreDate', getToday());
+  localStorage.setItem('streak_' + playerName, streak);
+  localStorage.setItem('lastPlayDate_' + playerName, lastPlayDate);
+  localStorage.setItem('dailyScore_' + playerName, dailyScore);
+  localStorage.setItem('dailyScoreDate_' + playerName, getToday());
 }
 
-function updateStreakInfo(player) {
+function updateStreakInfo() {
   if (!lastPlayDate || lastPlayDate < getToday()) {
-    if (lastPlayDate && lastPlayDate < getToday() && lastPlayDate !== getToday()) {
-      streakInfo.innerText = `😢 Sorry ${player}, you missed a day! Streak reset.`;
+    if (lastPlayDate && lastPlayDate < getToday()) {
+      streakInfo.innerText = `😢 Sorry ${playerName}, you missed a day! Streak reset.`;
       streak = 0;
-    } else {
-      streakInfo.innerText = `Your current streak: ${streak} days`;
-    }
-  } else {
-    streakInfo.innerText = `Your current streak: ${streak} days`;
-  }
+    } else { streakInfo.innerText = `Your current streak: ${streak} days`; }
+  } else { streakInfo.innerText = `Your current streak: ${streak} days`; }
 }
 
-// Start Game
 document.getElementById('startBtn').addEventListener('click', () => {
   const nameInput = document.getElementById('playerName').value.trim();
-  if (!nameInput) { alert("Please enter your name!"); return; }
+  if (!nameInput) { alert("Enter your name!"); return; }
   playerName = nameInput;
   mode = document.getElementById('mode').value;
   maxNumber = Number(document.getElementById('maxNumber').value);
@@ -192,30 +119,23 @@ document.getElementById('startBtn').addEventListener('click', () => {
   wrongFeedbackEl.innerText = '';
 
   loadPlayerData();
-  updateStreakInfo(playerName);
+  updateStreakInfo();
 
   startScreen.style.display = 'none';
   gameScreen.style.display = 'block';
   generateQuestion();
 });
 
-// Back to Settings
 document.getElementById('backBtn').addEventListener('click', () => {
   gameScreen.style.display = 'none';
   startScreen.style.display = 'block';
   savePlayerData();
 });
 
-// Keypad
-document.querySelectorAll('.numBtn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    answerInput.value += btn.innerText;
-  });
-});
-document.getElementById('clearBtn').addEventListener('click', () => { answerInput.value = ''; });
+document.querySelectorAll('.numBtn').forEach(btn => btn.addEventListener('click', () => answerInput.value += btn.innerText));
+document.getElementById('clearBtn').addEventListener('click', () => answerInput.value = '');
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 
-// Top Scores Page
 document.getElementById('topScoresBtn').addEventListener('click', () => {
   startScreen.style.display = 'none';
   gameScreen.style.display = 'none';
@@ -233,17 +153,12 @@ function generateQuestion() {
   let num1 = Math.floor(Math.random() * (maxNumber + 1));
   let num2 = Math.floor(Math.random() * (maxNumber + 1));
   let op = '+';
-
   if (mode === 'subtraction') op = '-';
   else if (mode === 'mixed') op = Math.random() < 0.5 ? '+' : '-';
 
-  if (op === '-') {
-    if (num1 < num2) [num1, num2] = [num2, num1];
-    answer = num1 - num2;
-  } else {
-    answer = num1 + num2;
-  }
+  if (op === '-' && num1 < num2) [num1, num2] = [num2, num1];
 
+  answer = (op === '-') ? num1 - num2 : num1 + num2;
   questionEl.innerText = `${playerName}, what is ${num1} ${op} ${num2}?`;
   feedbackEl.innerText = '';
   wrongFeedbackEl.innerText = '';
@@ -252,7 +167,7 @@ function generateQuestion() {
 function checkAnswer() {
   const input = answerInput.value.trim();
   const userAnswer = Number(input);
-  if (input === '' || isNaN(userAnswer)) { alert("Please enter a number!"); return; }
+  if (input === '' || isNaN(userAnswer)) { alert("Enter a number!"); return; }
 
   if (userAnswer === answer) {
     score++;
@@ -260,17 +175,16 @@ function checkAnswer() {
     scoreEl.innerText = `Score: ${score}`;
     dailyScoreEl.innerText = `Daily Score: ${dailyScore}`;
 
-    // Update streak once per day
     const today = getToday();
     if (lastPlayDate !== today) {
       streak++;
       lastPlayDate = today;
       feedbackEl.innerText = `🎉 Awesome, ${playerName}, that is correct! Your streak is now ${streak} days!`;
-    } else {
-      feedbackEl.innerText = `✅ Correct, ${playerName}!`;
-    }
+    } else { feedbackEl.innerText = `✅ Correct, ${playerName}!`; }
+
     wrongFeedbackEl.innerText = '';
     savePlayerData();
+    updateLeaderboard(playerName, dailyScore, streak);
     setTimeout(generateQuestion, 2000);
   } else {
     wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
@@ -280,40 +194,49 @@ function checkAnswer() {
   }
 }
 
-// Top Scores
+// Multi-player Leaderboard
+function getLeaderboard() {
+  const data = localStorage.getItem('leaderboard');
+  return data ? JSON.parse(data) : [];
+}
+
+function saveLeaderboard(lb) { localStorage.setItem('leaderboard', JSON.stringify(lb)); }
+
+function updateLeaderboard(name, score, streakVal) {
+  let lb = getLeaderboard();
+  const idx = lb.findIndex(p => p.name === name);
+  if (idx >= 0) {
+    if (score > lb[idx].dailyScore) lb[idx].dailyScore = score;
+    if (streakVal > lb[idx].streak) lb[idx].streak = streakVal;
+  } else {
+    lb.push({ name, dailyScore: score, streak: streakVal });
+  }
+  lb.sort((a,b) => b.dailyScore - a.dailyScore || b.streak - a.streak);
+  saveLeaderboard(lb);
+}
+
 function displayTopScores() {
-  const highScore = Number(localStorage.getItem('highScore') || 0);
-  const highestStreak = Number(localStorage.getItem('highestStreak') || 0);
-  const player = playerName || localStorage.getItem('lastPlayer') || 'Player';
-
-  // Update high score and streak if needed
-  if (dailyScore > highScore) localStorage.setItem('highScore', dailyScore);
-  if (streak > highestStreak) localStorage.setItem('highestStreak', streak);
-
-  localStorage.setItem('lastPlayer', player);
-
-  const hs = Number(localStorage.getItem('highScore'));
-  const hsStreak = Number(localStorage.getItem('highestStreak'));
-
-  document.getElementById('highScoresList').innerHTML = `
-    <p>Player: ${player}</p>
-    <p>Highest Daily Score: ${hs}</p>
-    <p>Highest Streak: ${hsStreak} days</p>
-  `;
+  const lb = getLeaderboard();
+  if (!lb.length) { document.getElementById('highScoresList').innerHTML = '<p>No scores yet!</p>'; return; }
+  let html = '<ol>';
+  lb.forEach(p => html += `<li>${p.name} - Daily Score: ${p.dailyScore}, Streak: ${p.streak}</li>`);
+  html += '</ol>';
+  document.getElementById('highScoresList').innerHTML = html;
 }
 
 // Reset daily score at midnight
 setInterval(() => {
   const today = getToday();
-  const savedDate = localStorage.getItem('dailyScoreDate');
-  if (savedDate !== today) {
-    dailyScore = 0;
-    localStorage.setItem('dailyScore', 0);
-    localStorage.setItem('dailyScoreDate', today);
-    if (gameScreen.style.display === 'block') dailyScoreEl.innerText = `Daily Score: 0`;
-  }
-}, 60 * 1000); // check every minute
-
+  let lb = getLeaderboard();
+  lb.forEach(p => {
+    const savedDate = localStorage.getItem('dailyScoreDate_' + p.name);
+    if (savedDate !== today) {
+      localStorage.setItem('dailyScore_' + p.name, 0);
+      localStorage.setItem('dailyScoreDate_' + p.name, today);
+      if (playerName === p.name) dailyScoreEl.innerText = 'Daily Score: 0';
+    }
+  });
+}, 60000);
 </script>
 
 </body>
