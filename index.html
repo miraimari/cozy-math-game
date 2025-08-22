@@ -6,8 +6,10 @@
 <title>Handwriting Math Game</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-  canvas { border: 2px solid black; margin-top: 10px; touch-action: none; }
+  h1 { color: #333; }
+  canvas { border: 2px solid black; margin-top: 10px; touch-action: none; background: #f9f9f9; }
   button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+  #result { font-size: 18px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -26,17 +28,25 @@ let ctx = canvas.getContext('2d');
 let drawing = false;
 let answer = 0;
 
-// Generate a random addition question
+// Generate a random arithmetic problem
 function generateQuestion() {
     let a = Math.floor(Math.random() * 10) + 1;
     let b = Math.floor(Math.random() * 10) + 1;
-    answer = a + b;
-    document.getElementById('question').innerText = `What is ${a} + ${b}?`;
+    let operators = ['+', '-', '*'];
+    let op = operators[Math.floor(Math.random() * operators.length)];
+
+    switch(op) {
+        case '+': answer = a + b; break;
+        case '-': answer = a - b; break;
+        case '*': answer = a * b; break;
+    }
+
+    document.getElementById('question').innerText = `What is ${a} ${op} ${b}?`;
     clearCanvas();
     document.getElementById('result').innerText = '';
 }
 
-// Drawing functions
+// Canvas drawing functions
 function startDrawing(e) { drawing = true; draw(e); }
 function stopDrawing() { drawing = false; ctx.beginPath(); }
 function draw(e) {
@@ -58,7 +68,7 @@ function clearCanvas() {
     ctx.beginPath();
 }
 
-// Check answer (for now, manual prompt)
+// Check answer (manual prompt for now)
 function checkAnswer() {
     let userAnswer = prompt("Enter your answer:");
     if (parseInt(userAnswer) === answer) {
