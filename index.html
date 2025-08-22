@@ -8,17 +8,25 @@
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
   input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
   button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
-  #result { font-size: 20px; margin-top: 10px; font-weight: bold; }
+  #feedbackScreen { display: none; font-size: 24px; font-weight: bold; margin-top: 30px; }
 </style>
 </head>
 <body>
 
 <h1>Math Game - 1-Digit Addition</h1>
-<div id="question"></div>
-<input type="text" id="answerInput" placeholder="Your answer">
-<br>
-<button id="submitBtn">Submit</button>
-<div id="result"></div>
+
+<div id="gameScreen">
+    <div id="question"></div>
+    <input type="text" id="answerInput" placeholder="Your answer">
+    <br>
+    <button id="submitBtn">Submit</button>
+</div>
+
+<div id="feedbackScreen">
+    <div id="feedbackMessage"></div>
+    <button id="nextBtn">Next</button>
+</div>
+
 <div id="score">Score: 0</div>
 
 <script>
@@ -27,38 +35,54 @@ let score = 0;
 
 // Generate a 1-digit addition problem
 function generateQuestion() {
-    const a = Math.floor(Math.random() * 9) + 1; // 1-9
-    const b = Math.floor(Math.random() * 9) + 1; // 1-9
+    const a = Math.floor(Math.random() * 9) + 1;
+    const b = Math.floor(Math.random() * 9) + 1;
     answer = a + b;
 
     document.getElementById('question').innerText = `What is ${a} + ${b}?`;
-    document.getElementById('result').innerText = '';
     document.getElementById('answerInput').value = '';
     document.getElementById('answerInput').focus();
 }
 
-// Check if the typed answer is correct
+// Show feedback screen
+function showFeedback(correct) {
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('feedbackScreen').style.display = 'block';
+    if (correct) {
+        document.getElementById('feedbackMessage').innerText = "✅ Correct!";
+    } else {
+        document.getElementById('feedbackMessage').innerText = `❌ Wrong! Correct answer: ${answer}`;
+    }
+}
+
+// Handle answer submission
 function checkAnswer() {
     const input = document.getElementById('answerInput').value.trim();
     const userAnswer = Number(input);
 
     if (input === '' || isNaN(userAnswer)) {
-        document.getElementById('result').innerText = "Please enter a number!";
+        alert("Please enter a number!");
         return;
     }
 
     if (userAnswer === answer) {
-        document.getElementById('result').innerText = "✅ Correct!";
         score++;
+        showFeedback(true);
     } else {
-        document.getElementById('result').innerText = `❌ Wrong! Correct answer: ${answer}`;
+        showFeedback(false);
     }
 
     document.getElementById('score').innerText = `Score: ${score}`;
-    generateQuestion();
 }
 
-// Event listeners
+// Next button click
+document.getElementById('nextBtn').addEventListener('click', () => {
+    document.getElementById('feedbackScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+    generateQuestion();
+});
+
+// Submit button & Enter key
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
