@@ -8,25 +8,21 @@
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
   input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
   button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
-  #feedbackScreen { display: none; font-size: 24px; font-weight: bold; margin-top: 30px; }
+  #feedback { font-size: 24px; font-weight: bold; margin-top: 20px; color: green; }
+  #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 20px; color: red; }
 </style>
 </head>
 <body>
 
 <h1>Math Game - 1-Digit Addition</h1>
 
-<div id="gameScreen">
-    <div id="question"></div>
-    <input type="text" id="answerInput" placeholder="Your answer">
-    <br>
-    <button id="submitBtn">Submit</button>
-</div>
+<div id="question"></div>
+<input type="text" id="answerInput" placeholder="Your answer">
+<br>
+<button id="submitBtn">Submit</button>
 
-<div id="feedbackScreen">
-    <div id="feedbackMessage"></div>
-    <button id="nextBtn">Next</button>
-</div>
-
+<div id="feedback"></div>
+<div id="wrongFeedback"></div>
 <div id="score">Score: 0</div>
 
 <script>
@@ -43,17 +39,8 @@ function generateQuestion() {
     document.getElementById('answerInput').value = '';
     document.getElementById('answerInput').focus();
 
-    document.getElementById('gameScreen').style.display = 'block';
-    document.getElementById('feedbackScreen').style.display = 'none';
-}
-
-// Show feedback screen
-function showFeedback(correct) {
-    document.getElementById('gameScreen').style.display = 'none';
-    document.getElementById('feedbackScreen').style.display = 'block';
-    document.getElementById('feedbackMessage').innerText = correct 
-        ? "✅ Correct!" 
-        : `❌ Wrong! Correct answer: ${answer}`;
+    document.getElementById('feedback').innerText = '';
+    document.getElementById('wrongFeedback').innerText = '';
 }
 
 // Check the typed answer
@@ -68,16 +55,19 @@ function checkAnswer() {
 
     if (userAnswer === answer) {
         score++;
-        showFeedback(true);
+        document.getElementById('feedback').innerText = "✅ Correct!";
+        document.getElementById('wrongFeedback').innerText = '';
+        // Wait a moment, then generate next question
+        setTimeout(generateQuestion, 1000);
     } else {
-        showFeedback(false);
+        document.getElementById('wrongFeedback').innerText = "❌ Wrong! Try again.";
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('answerInput').value = '';
+        document.getElementById('answerInput').focus();
     }
 
     document.getElementById('score').innerText = `Score: ${score}`;
 }
-
-// Next button click
-document.getElementById('nextBtn').addEventListener('click', generateQuestion);
 
 // Submit button & Enter key
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
