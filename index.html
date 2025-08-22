@@ -1,309 +1,626 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Fun Math App 🧮</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Math Adventure — Pets & Map</title>
+
+<!-- TensorFlow.js -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.11.0/dist/tf.min.js"></script>
+
 <style>
-body { font-family: sans-serif; text-align: center; background: #f0f4f8; }
-h1 { margin-top: 10px; }
-canvas { border: 2px solid #333; background: white; margin: 5px; touch-action: none; }
-button { margin: 10px; padding: 10px 20px; font-size: 18px; }
-.stats { margin: 15px; font-size: 18px; }
-.digit-boxes { display: flex; justify-content: center; flex-wrap: wrap; }
-#badges div { margin: 3px; font-size: 18px; color: green; }
+  :root{
+    --bg:#FFF0F5; --accent:#FF69B4; --button:#FFB6C1; --text:#333;
+  }
+  body{font-family:"Comic Sans MS",cursive; margin:0; color:var(--text); background:var(--bg); text-align:center;}
+  .wrap{padding:12px; max-width:980px; margin:0 auto;}
+  h1{color:var(--accent); margin:12px 0;}
+  .card{background:rgba(255,255,255,0.85); border-radius:12px; padding:12px; margin:10px auto;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; align-items:center;}
+  input,select{padding:8px; border-radius:10px; border:2px solid var(--accent); font-size:16px;}
+  button{padding:10px 14px; border-radius:10px; font-size:16px; background:var(--button); color:#fff; border:0; cursor:pointer;}
+  button.ghost{background:transparent; border:2px solid var(--accent); color:var(--accent);}
+  #canvas{border:3px solid var(--accent); border-radius:12px; background:#fff; touch-action:none;}
+  #q{font-size:26px; margin:8px 0;}
+  #feedback{min-height:24px; font-size:18px; margin-top:6px;}
+  #avatar{font-size:56px; display:inline-block; position:relative;}
+  #avatarItems{position:absolute; top:0; left:0; font-size:28px; pointer-events:none;}
+  #map{display:flex; gap:8px; justify-content:center; margin:10px 0;}
+  .world{width:140px; height:120px; border-radius:12px; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; font-weight:bold; cursor:pointer;}
+  .locked{opacity:0.45; filter:grayscale(0.3);}
+  #petsRow{display:flex; gap:8px; justify-content:center; margin-top:8px;}
+  .pet{font-size:34px; padding:6px; border-radius:10px; background:#fff; border:2px solid #eee; cursor:pointer;}
+  #assignmentsList{display:flex; flex-direction:column; gap:6px; margin-top:8px;}
+  .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:#fff; border:2px solid var(--accent); margin:4px;}
+  /* modal */
+  .modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:2000; align-items:center; justify-content:center; padding:12px;}
+  .panel{background:#fff; border-radius:12px; padding:14px; max-width:720px; width:100%;}
+  .badge{background:#FFD700; border-radius:8px; padding:4px 8px; margin:4px; display:inline-block;}
+  #scene{width:220px;height:120px;border-radius:8px;background:rgba(255,255,255,0.9); margin:6px auto; border:2px dashed var(--accent); position:relative;}
+  .sceneItem{position:absolute; font-size:22px;}
+  .small{font-size:12px; color:#666;}
 </style>
 </head>
 <body>
-<h1>Fun Math App ✏️</h1>
-<div class="stats">
-  <span id="streak">Streak: 0</span> | 
-  <span id="dailyStreak">Daily Streak: 0</span> | 
-  <span id="xp">XP: 0</span> | 
-  <span id="level">Level: 1</span>
+<div class="wrap">
+  <h1>Math Adventure — Pets & Map 🗺️</h1>
+
+  <!-- SETTINGS -->
+  <div id="settingsCard" class="card">
+    <div class="row">
+      <label>Player name: <input id="name" type="text" placeholder="Her name" /></label>
+      <label>Max number: <input id="maxNum" type="number" min="5" max="999" value="20" style="width:90px"></label>
+    </div>
+
+    <div class="row">
+      <strong>Ops:</strong>
+      <label><input class="op" type="checkbox" value="+" checked> +</label>
+      <label><input class="op" type="checkbox" value="-" checked> −</label>
+      <label><input class="op" type="checkbox" value="*" checked> ×</label>
+      <label><input class="op" type="checkbox" value="/" > ÷</label>
+    </div>
+
+    <div class="row">
+      <label>Theme:
+        <select id="themeSelect">
+          <option value="Pastel">Pastel</option>
+          <option value="Space">Space (unlock L3)</option>
+          <option value="Jungle">Jungle (unlock 10 streak)</option>
+          <option value="Underwater">Underwater (unlock 200 XP)</option>
+        </select>
+      </label>
+
+      <button id="startBtn">Start Game</button>
+      <button id="trainBtn" class="ghost">Train handwriting</button>
+      <button id="assignBtn" class="ghost">Assignments</button>
+    </div>
+
+    <div class="row small">
+      <div>Tip: You can train handwriting once to make recognition more accurate.</div>
+    </div>
+  </div>
+
+  <!-- MAP & PROGRESSION -->
+  <div id="mapCard" class="card">
+    <h2 class="small">Adventure Map</h2>
+    <div id="map" class="row">
+      <div id="world0" class="world" style="background:linear-gradient(135deg,#ffb6c1,#ffd1dc)">Home<br/>Start</div>
+      <div id="world1" class="world locked" style="background:linear-gradient(135deg,#a0e7e5,#c9f7f3)">Forest<br/>(Unlock)</div>
+      <div id="world2" class="world locked" style="background:linear-gradient(135deg,#dff5cf,#b8f2b0)">Ocean<br/>(Unlock)</div>
+      <div id="world3" class="world locked" style="background:linear-gradient(135deg,#cfe0ff,#9fbfff)">Castle<br/>(Boss)</div>
+    </div>
+    <div class="small">Progress through worlds by completing steps; each world ends with a Boss Challenge.</div>
+  </div>
+
+  <!-- GAME AREA -->
+  <div id="gameCard" class="card" style="display:none">
+    <div id="hud" class="row">
+      <div class="pill" id="xpP">XP: 0</div>
+      <div class="pill" id="lvlP">Level: 1</div>
+      <div class="pill" id="streakP">Streak: 0</div>
+      <div class="pill" id="comboP">Combo: 0</div>
+    </div>
+
+    <div id="q">—</div>
+    <canvas id="canvas" width="320" height="140"></canvas>
+    <div class="row">
+      <button id="submitBtn">Submit</button>
+      <button id="clearBtn" class="ghost">Clear</button>
+      <button id="hintBtn" class="ghost">Hint</button>
+      <button id="reviewBtn" class="ghost">Review Missed</button>
+    </div>
+    <div id="feedback" class="small"></div>
+
+    <div class="row" style="margin-top:8px">
+      <div id="avatar">
+        <div id="avatarEmoji">👧</div>
+        <div id="avatarItems" style="position:absolute;left:2px;top:-4px;font-size:22px"></div>
+      </div>
+    </div>
+
+    <div id="scene" title="Decorate & move items"></div>
+
+    <div class="row" style="margin-top:8px">
+      <div id="petsRow"></div>
+      <div class="small">Tap a pet to select it as companion</div>
+    </div>
+
+    <div id="badgesRow" style="margin-top:8px"></div>
+  </div>
+
+  <!-- ASSIGNMENTS BUTTON -->
+  <div class="row" style="margin:6px auto; justify-content:center;">
+    <button id="viewAssignBtn" class="ghost">View Assignments</button>
+  </div>
+
 </div>
-<div id="badges"></div>
 
-<h2 id="question">Loading...</h2>
-<div class="digit-boxes" id="digitBoxes"></div>
+<!-- MODALS -->
+<!-- Training modal -->
+<div id="trainModal" class="modal">
+  <div class="panel">
+    <h2>Handwriting training</h2>
+    <p>Draw the shown digit, then Save Sample. Do 1–3 samples per digit to help the app learn her handwriting.</p>
+    <h3 id="trainDigitLabel">Draw: 0</h3>
+    <canvas id="trainCanvas" width="220" height="140" style="border:2px solid var(--accent);"></canvas>
+    <div class="row"><button id="saveSampleBtn">Save Sample</button><button id="nextDigitBtn" class="ghost">Next</button><button id="finishTrainBtn" class="ghost">Finish</button></div>
+  </div>
+</div>
 
-<button onclick="clearAll()">Clear All</button>
-<button onclick="recognizeAll()">Read</button>
-<button onclick="submitAll()">Submit</button>
-<button onclick="startReview()">Review Missed Questions</button>
+<!-- Assignments modal -->
+<div id="assignModal" class="modal">
+  <div class="panel">
+    <h2>Custom Assignments (Parent)</h2>
+    <div class="row">
+      <label>Title: <input id="assignTitle" type="text" placeholder="e.g., Multiplication practice"></label>
+      <label>Operation:
+        <select id="assignOp"><option value="+">+</option><option value="-">-</option><option value="*">×</option><option value="/">÷</option></select>
+      </label>
+      <label>Max number: <input id="assignMax" type="number" value="10" min="5" style="width:90px"></label>
+      <label>Count: <input id="assignCount" type="number" value="10" min="1" style="width:80px"></label>
+    </div>
+    <div class="row"><button id="saveAssignBtn">Save Assignment</button><button class="ghost" onclick="hideAssignModal()">Close</button></div>
+    <h3>Active</h3>
+    <div id="assignmentsList"></div>
+  </div>
+</div>
 
-<h3 id="recognized">I read: …</h3>
-<h3 id="feedback"></h3>
-
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.18.0/dist/tf.min.js"></script>
+<!-- Boss modal -->
+<div id="bossModal" class="modal">
+  <div class="panel">
+    <h2>Boss Challenge!</h2>
+    <p id="bossText"></p>
+    <div class="row"><button id="bossStartBtn">Start Boss</button><button class="ghost" onclick="hideBoss()">Close</button></div>
+  </div>
+</div>
 
 <script>
-let model;
-async function loadModel() {
-  model = await tf.loadLayersModel("https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json");
-  updateDailyStreak();
-  loadGameState();
-  newQuestion();
+/* -------------------------
+   State and helpers
+------------------------- */
+const KEY = "math_adventure_pets_v1";
+let baseModel = null; // mnist base
+let state = {
+  name:"Friend",
+  xp:0, level:1, streak:0, combo:0,
+  ops:{'+':true,'-':true,'*':true,'/':false},
+  baseMax:20,
+  theme:'Pastel',
+  badges:[],
+  items:[], equipped:{}, // items unlocked & equipped
+  petsOwned: ['turtle'], petSelected: 'turtle',
+  worldProgress: 0, // 0=home,1=forest,2=ocean,3=castle
+  missed: [],
+  assignments: [], // {id,title,op,max,count,progress,completed}
+  stats:{'+':{ok:0,total:0},'-':{ok:0,total:0},'*':{ok:0,total:0},'/':{ok:0,total:0}},
+  recent: [],
+  userSamples: {}, // digit-> [Float32Array prototypes]
+};
+let cur = {a:0,b:0,op:'+',answer:0};
+let hintStep = 0, usingHint=false;
+
+/* simple helpers */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function load(){ const s=localStorage.getItem(KEY); if(s){ Object.assign(state, JSON.parse(s)); } }
+
+/* -------------- model & recognition (reuse segmentation & kNN) ------------- */
+/* load base MNIST model */
+async function loadModel(){
+  try{
+    baseModel = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json');
+    console.log("MNIST base loaded");
+  }catch(e){
+    console.warn("Model load failed", e);
+  }
 }
 loadModel();
 
-// Game state
-let streak = 0, xp = 0, level = 1;
-let currentAnswer = 0;
-let recognizedDigits = [];
-let badgesEarned = [];
-let firstAttemptWrong = false;
+/* canvas helpers */
+const canvas = $('#canvas'), cctx = canvas.getContext('2d');
+cctx.lineWidth=12; cctx.lineCap='round'; cctx.strokeStyle='#000';
+let drawing=false;
+canvas.addEventListener('pointerdown', e=>{ drawing=true; cctx.beginPath(); cctx.moveTo(e.offsetX,e.offsetY); });
+canvas.addEventListener('pointermove', e=>{ if(drawing){ cctx.lineTo(e.offsetX,e.offsetY); cctx.stroke(); }});
+canvas.addEventListener('pointerup', _=>{ drawing=false; });
+$('#clearBtn').onclick = ()=> cctx.clearRect(0,0,canvas.width,canvas.height);
 
-// Review mode state
-let reviewMode = false;
-let reviewQuestions = [];
-let reviewIndex = 0;
+/* train canvas */
+const tCanvas = $('#trainCanvas'), tctx = tCanvas.getContext('2d');
+tctx.lineWidth=12; tctx.lineCap='round'; tctx.strokeStyle='#000';
+let tDraw=false;
+tCanvas.addEventListener('pointerdown', e=>{ tDraw=true; tctx.beginPath(); tctx.moveTo(e.offsetX,e.offsetY); });
+tCanvas.addEventListener('pointermove', e=>{ if(tDraw){ tctx.lineTo(e.offsetX,e.offsetY); tctx.stroke(); }});
+tCanvas.addEventListener('pointerup', _=>{ tDraw=false; });
 
-const digitBoxesContainer = document.getElementById("digitBoxes");
-
-// -------------------- Persistence --------------------
-function saveGameState() {
-  const state = {
-    streak: streak,
-    xp: xp,
-    level: level,
-    badges: badgesEarned,
-    dailyStreak: parseInt(localStorage.getItem("dailyStreak")) || 0,
-    missedQuestions: JSON.parse(localStorage.getItem("missedQuestions") || "[]")
-  };
-  localStorage.setItem("mathAppState", JSON.stringify(state));
-}
-
-function loadGameState() {
-  const state = JSON.parse(localStorage.getItem("mathAppState"));
-  if(state){
-    streak = state.streak || 0;
-    xp = state.xp || 0;
-    level = state.level || 1;
-    badgesEarned = state.badges || [];
-    document.getElementById("streak").innerText = "Streak: " + streak;
-    document.getElementById("xp").innerText = "XP: " + xp;
-    document.getElementById("level").innerText = "Level: " + level;
-
-    const badgeDiv = document.getElementById("badges");
-    badgeDiv.innerHTML = "";
-    badgesEarned.forEach(b => {
-      const badge = document.createElement("div");
-      badge.innerText = "🏅 " + b;
-      badgeDiv.appendChild(badge);
-    });
+/* convert a canvas to normalized 28x28 Float32Array */
+function canvasToArr28(c){
+  // draw onto 28x28 offscreen
+  const tmp = document.createElement('canvas'); tmp.width=28; tmp.height=28;
+  const tx = tmp.getContext('2d');
+  tx.fillStyle='#fff'; tx.fillRect(0,0,28,28);
+  tx.drawImage(c,0,0,28,28);
+  const img = tx.getImageData(0,0,28,28).data;
+  const arr = new Float32Array(28*28);
+  for(let i=0;i<28*28;i++){
+    const r=img[i*4], g=img[i*4+1], b=img[i*4+2];
+    const lum = (0.299*r + 0.587*g + 0.114*b);
+    // invert because handwriting is dark on white
+    arr[i] = clamp(1 - lum/255, 0, 1);
   }
+  return arr;
 }
+function clamp(v,min=0,max=1){ return v<min?min: v>max?max:v; }
 
-// -------------------- Daily streak --------------------
-function updateDailyStreak() {
-  const today = new Date().toDateString();
-  const lastPlayed = localStorage.getItem("lastPlayed");
-  let dailyStreak = parseInt(localStorage.getItem("dailyStreak")) || 0;
-
-  if(lastPlayed){
-    const lastDate = new Date(lastPlayed);
-    const diffDays = Math.floor((new Date(today) - lastDate) / (1000*60*60*24));
-    if(diffDays === 1) dailyStreak++;
-    else if(diffDays > 1) dailyStreak = 1;
-  } else dailyStreak = 1;
-
-  localStorage.setItem("dailyStreak", dailyStreak);
-  localStorage.setItem("lastPlayed", today);
-  document.getElementById("dailyStreak").innerText = "Daily Streak: " + dailyStreak;
-
-  if(dailyStreak === 7) showBadge("7-Day Streak! 🌟");
-  saveGameState();
-}
-
-// -------------------- Badges --------------------
-function showBadge(name) {
-  if (!badgesEarned.includes(name)) {
-    badgesEarned.push(name);
-    const badgeDiv = document.getElementById("badges");
-    const badge = document.createElement("div");
-    badge.innerText = "🏅 " + name;
-    badgeDiv.appendChild(badge);
-    saveGameState();
-  }
-}
-
-// -------------------- Levels --------------------
-function checkLevelUp() {
-  if(xp >= level*20){
-    level++;
-    document.getElementById("level").innerText = "Level: " + level;
-    showBadge("Level Up! 🎉");
-    saveGameState();
-  }
-}
-
-function getDifficulty() {
-  return Math.min(level-1, 5);
-}
-
-// -------------------- Question generation --------------------
-function newQuestion() {
-  if(reviewMode) return loadReviewQuestion();
-
-  const grade = getDifficulty();
-  let maxNum = 10;
-  let operations = ["+", "-"];
-  if(grade <= 1) maxNum = 10;
-  else if(grade <=3) maxNum = 50;
-  else maxNum = 200;
-  if(grade>=4) operations.push("*");
-
-  let op = operations[Math.floor(Math.random()*operations.length)];
-  let a = Math.floor(Math.random()*maxNum)+1;
-  let b = Math.floor(Math.random()*maxNum)+1;
-  if(op === "-" && b > a) [a,b]=[b,a];
-
-  currentAnswer = op === "+" ? a+b : op === "-" ? a-b : a*b;
-  document.getElementById("question").innerText = `${a} ${op} ${b} = ?`;
-  recognizedDigits = [];
-  firstAttemptWrong = false;
-  createDigitBoxes(currentAnswer.toString().length);
-  document.getElementById("feedback").innerText = "";
-}
-
-// -------------------- Digit input canvases --------------------
-function createDigitBoxes(count) {
-  digitBoxesContainer.innerHTML = "";
-  for(let i=0;i<count;i++){
-    let c = document.createElement("canvas");
-    c.width = 100; c.height = 100;
-    c.id = "canvas"+i;
-    digitBoxesContainer.appendChild(c);
-    initCanvas(c);
-  }
-}
-
-function initCanvas(c){
-  let ctx = c.getContext("2d");
-  ctx.lineWidth = 20; ctx.lineCap = "round"; ctx.strokeStyle = "black";
-  let drawing = false;
-  c.addEventListener("pointerdown", e=>{drawing=true;draw(e,c,ctx);});
-  c.addEventListener("pointermove", e=>{if(drawing) draw(e,c,ctx);});
-  c.addEventListener("pointerup", ()=>{drawing=false; ctx.beginPath();});
-  c.addEventListener("pointerleave", ()=>{drawing=false; ctx.beginPath();});
-}
-
-function draw(e,c,ctx){
-  const rect = c.getBoundingClientRect();
-  ctx.lineTo(e.clientX-rect.left,e.clientY-rect.top);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(e.clientX-rect.left,e.clientY-rect.top);
-}
-
-function clearAll(){
-  document.querySelectorAll("canvas").forEach(c=>c.getContext("2d").clearRect(0,0,c.width,c.height));
-  recognizedDigits=[];
-  document.getElementById("recognized").innerText="I read: …";
-}
-
-// -------------------- Handwriting recognition --------------------
-async function recognizeAll(){
-  recognizedDigits=[];
-  const canvases = document.querySelectorAll("canvas");
-  for(let c of canvases){
-    let imgData = c.getContext("2d").getImageData(0,0,c.width,c.height);
-    let gray = tf.browser.fromPixels(imgData,1);
-    let resized = tf.image.resizeBilinear(gray,[28,28]).toFloat().expandDims(0).div(255.0);
-    let pred = model.predict(resized).dataSync();
-    let digit = pred.indexOf(Math.max(...pred));
-    recognizedDigits.push(digit);
-    gray.dispose(); resized.dispose();
-  }
-  document.getElementById("recognized").innerText="I read: "+recognizedDigits.join("");
-}
-
-// -------------------- Missed questions --------------------
-function addMissedQuestion(q, ans){
-  let missed = JSON.parse(localStorage.getItem("missedQuestions") || "[]");
-  if(!missed.some(item => item.question===q)) {
-    missed.push({question: q, answer: ans});
-    localStorage.setItem("missedQuestions", JSON.stringify(missed));
-    saveGameState();
-  }
-}
-function removeFromMissed(q){
-  let missed = JSON.parse(localStorage.getItem("missedQuestions") || "[]");
-  missed = missed.filter(item => item.question !== q);
-  localStorage.setItem("missedQuestions", JSON.stringify(missed));
-  saveGameState();
-}
-
-// -------------------- Submit answer --------------------
-function submitAll(){
-  recognizeAll().then(()=>{
-    let guess = parseInt(recognizedDigits.join(""));
-    
-    if(reviewMode){
-      if(guess===currentAnswer){
-        removeFromMissed(document.getElementById("question").innerText);
-        reviewIndex++;
-        loadReviewQuestion();
-      } else {
-        document.getElementById("feedback").innerText="❌ Try again!";
-      }
-      return;
+/* segment digits by vertical projection (same approach as earlier) */
+function segmentDigits(c){
+  const w=c.width, h=c.height;
+  const img = c.getContext('2d').getImageData(0,0,w,h).data;
+  const cols = new Array(w).fill(0);
+  for(let x=0;x<w;x++){
+    let s=0;
+    for(let y=0;y<h;y++){
+      const i=(y*w+x)*4;
+      const lum = 0.299*img[i]+0.587*img[i+1]+0.114*img[i+2];
+      if(255-lum > 80) s++;
     }
-    
-    // Normal mode with retry until correct
-    if(guess===currentAnswer){
-      if(firstAttemptWrong){
-        addMissedQuestion(document.getElementById("question").innerText, currentAnswer);
-        firstAttemptWrong = false;
-      }
-      streak++; xp+=5;
-      document.getElementById("feedback").innerText="✅ Correct!";
-      document.getElementById("streak").innerText="Streak: "+streak;
-      document.getElementById("xp").innerText="XP: "+xp;
-
-      // Example badges
-      if(streak===3) showBadge("First Streak! 🔥");
-      if(currentAnswer>10) showBadge("Math Master! 🏆");
-      if(document.getElementById("question").innerText.includes("*")) showBadge("Multiplication Pro! ✨");
-
-      checkLevelUp();
-      saveGameState();
-      newQuestion();
-    } else {
-      document.getElementById("feedback").innerText="❌ Try again!";
-      firstAttemptWrong = true;
-      saveGameState();
+    cols[x]=s;
+  }
+  const spans=[]; let inRun=false, s=0;
+  for(let x=0;x<w;x++){
+    if(cols[x]>0 && !inRun){ inRun=true; s=x; }
+    if((cols[x]==0 || x==w-1) && inRun){
+      let e = cols[x]==0? x-1 : x;
+      if(e-s>4) spans.push([Math.max(0,s-2), Math.min(w-1,e+2)]);
+      inRun=false;
     }
+  }
+  if(spans.length===0) spans.push([0,w-1]); // fallback
+  // create canvases
+  const parts = [];
+  for(const [sx,ex] of spans){
+    // find top/bottom
+    let top=h-1, bottom=0;
+    for(let x=sx;x<=ex;x++){
+      for(let y=0;y<h;y++){
+        const i=(y*w+x)*4;
+        const lum = 0.299*img[i]+0.587*img[i+1]+0.114*img[i+2];
+        if(255-lum > 80){ top=Math.min(top,y); bottom=Math.max(bottom,y); }
+      }
+    }
+    if(bottom-top<3) continue;
+    const cw = ex-sx+1, ch = bottom-top+1;
+    const off = document.createElement('canvas'); off.width = cw+8; off.height = ch+8;
+    const offctx = off.getContext('2d'); offctx.fillStyle='#fff'; offctx.fillRect(0,0,off.width,off.height);
+    offctx.putImageData(c.getContext('2d').getImageData(sx,top,cw,ch),4,4);
+    parts.push(off);
+  }
+  return parts.slice(0,6);
+}
+
+/* predict one digit: baseModel + kNN prototypes */
+function predictDigitFromArr(arr784){
+  if(!baseModel) return 0;
+  const t = tf.tensor(arr784, [1,28,28,1]);
+  const pred = baseModel.predict(t).dataSync(); t.dispose();
+  // prototype voting
+  const vote = new Float32Array(10).fill(0);
+  let any=false;
+  for(let d=0;d<10;d++){
+    const list = (state.userSamples && state.userSamples[d])? state.userSamples[d] : null;
+    if(!list || list.length===0) continue;
+    any=true;
+    // min distance
+    let best=1e9;
+    for(const s of list){
+      let dist=0;
+      for(let i=0;i<784;i++){ const diff = s[i]-arr784[i]; dist+=diff*diff; }
+      if(dist<best) best=dist;
+    }
+    vote[d] = 1/Math.sqrt(best+1e-6);
+  }
+  let blended = new Float32Array(10);
+  if(any){
+    const vs = vote.reduce((a,b)=>a+b,0)||1;
+    for(let i=0;i<10;i++) vote[i]=vote[i]/vs;
+  }
+  for(let i=0;i<10;i++) blended[i] = (pred[i]||0)*0.7 + (any? vote[i]*0.3 : 0);
+  let bestIdx=0, bestVal=-1;
+  for(let i=0;i<10;i++){ if(blended[i]>bestVal){ bestVal=blended[i]; bestIdx=i; } }
+  return bestIdx;
+}
+
+/* combine multi-digit guesses into integer */
+function recognizeNumberFromCanvas(){
+  const parts = segmentDigits(canvas);
+  const digits = [];
+  for(const p of parts){
+    const arr = canvasToArr28(p);
+    const d = predictDigitFromArr(arr);
+    digits.push(d);
+  }
+  if(digits.length===0) return null;
+  let s = digits.join('');
+  s = s.replace(/^0+(\d)/,'$1'); // remove leading zeros
+  if(/^\d+$/.test(s)) return parseInt(s,10);
+  return null;
+}
+
+/* ============== Game logic ============== */
+function updateHUD(){
+  $('#xpP').textContent = `XP: ${state.xp}`;
+  $('#lvlP').textContent = `Level: ${state.level}`;
+  $('#streakP').textContent = `Streak: ${state.streak}`;
+  $('#comboP').textContent = `Combo: ${state.combo}`;
+  renderBadges();
+  renderPets();
+  renderScene();
+  save();
+}
+
+function renderBadges(){
+  const r = $('#badgesRow'); r.innerHTML='';
+  for(const b of state.badges){ const el=document.createElement('div'); el.className='badge'; el.textContent=b; r.appendChild(el); }
+}
+
+function renderPets(){
+  const row = $('#petsRow'); row.innerHTML='';
+  const pool = ['turtle','axolotl','cat','dragon'];
+  for(const p of pool){
+    const have = state.petsOwned.includes(p);
+    const el = document.createElement('div'); el.className='pet'; el.textContent = (p==='turtle'?'🐢':p==='axolotl'?'🧬':p==='cat'?'🐱':'🐉');
+    if(!have){ el.style.opacity=0.35; el.title='Locked'; } else el.title='Tap to select';
+    el.onclick = ()=> { if(have){ state.petSelected=p; toast(`Selected ${p}`); updateHUD(); } };
+    row.appendChild(el);
+  }
+  $('#avatarItems').textContent = state.items.filter(id=>state.equipped && state.equipped[id]).map(id=> {
+    const map = {crown:'👑', wand:'✨', plant:'🪴', star:'⭐', book:'📚', fish:'🐟', tiger:'🐯', rocket:'🚀'};
+    return map[id]||'🎀';
+  }).join('');
+}
+
+/* scene render */
+function renderScene(){
+  const s = $('#scene'); s.innerHTML='';
+  let idx=0;
+  for(const it of state.items){
+    if(!state.equipped[it]) continue;
+    const el = document.createElement('div'); el.className='sceneItem'; el.textContent = (it==='crown'?'👑':it==='wand'?'✨':it==='plant'?'🪴':it==='star'?'⭐':it==='book'?'📚':it==='fish'?'🐟':it==='tiger'?'🐯':'🎀');
+    const x = 8 + (idx%3)*60; const y = 8 + Math.floor(idx/3)*36;
+    el.style.left = x+'px'; el.style.top = y+'px';
+    el.onclick = ()=>{ // toggle position or do nothing
+      toast('You moved your item!');
+    };
+    s.appendChild(el); idx++;
+  }
+}
+
+/* choose op with simple weighting and smart difficulty */
+function chooseOperation(){
+  const ops = Object.keys(state.ops).filter(k=>state.ops[k]);
+  if(ops.length===0) return '+';
+  // weight by accuracy: more accurate => slightly more likely
+  const weights = ops.map(op=>{
+    const st = state.stats[op]; const acc = st.total? st.ok/st.total : 0.8;
+    return clamp(acc,0.25,1);
+  });
+  let sum = weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*sum;
+  for(let i=0;i<ops.length;i++){ if(r<weights[i]) return ops[i]; r-=weights[i]; }
+  return ops[0];
+}
+function currentMax(){ let m = state.baseMax + Math.floor(state.level*2); if(overallAccuracy()>0.9) m+=8; if(overallAccuracy()<0.6) m = Math.max(6,m-6); return clamp(m,5,999); }
+function overallAccuracy(){ const totals = Object.values(state.stats).reduce((acc,s)=>({ok:acc.ok+s.ok,total:acc.total+s.total}),{ok:0,total:0}); return totals.total? totals.ok/totals.total : 0.8; }
+
+function genNums(op, maxN){
+  let a = 1+randInt(maxN), b = 1+randInt(maxN);
+  if(op=='-'){ if(b>a) [a,b]=[b,a]; }
+  if(op=='*'){ const cap = Math.max(3, Math.floor(Math.sqrt(maxN))); a=1+randInt(cap); b=1+randInt(cap); }
+  if(op=='/'){ b = 1+randInt(Math.min(maxN,12)); const k=1+randInt(Math.max(3,Math.floor(maxN/b))); a = b*k; }
+  return [a,b];
+}
+function randInt(n){ return Math.floor(Math.random()*n); }
+function computeAnswer(a,b,op){ if(op==='+') return a+b; if(op==='-') return a-b; if(op==='*') return a*b; if(op==='/') return Math.floor(a/b); return 0; }
+
+function nextQuestion(){
+  hintStep=0; usingHint=false; $('#hintBox')?.remove?.(); // not used here
+  if(state.review && state.missed.length>0){ // review mode
+    const m = state.missed.shift(); cur={...m}; $('#q').textContent = `Review: ${cur.a} ${cur.op} ${cur.b} = ?`; cctx.clearRect(0,0,canvas.width,canvas.height); return;
+  }
+  const op = chooseOperation(); const maxN = currentMax();
+  const [a,b] = genNums(op,maxN);
+  cur = {a,b,op, answer: computeAnswer(a,b,op)};
+  $('#q').textContent = `${a} ${op} ${b} = ?`; cctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+/* Hints generator simple */
+function hintForCurrent(){
+  const a=cur.a, b=cur.b, op=cur.op;
+  const hints=[];
+  if(op==='+'){ hints.push(`Try adding the ones: ${a%10} + ${b%10}`); if(a>=10||b>=10) hints.push(`Now add the tens.`); hints.push(`Result = ${a+b}`); }
+  if(op==='-'){ hints.push(`Try subtracting the ones: ${a%10} - ${b%10}`); hints.push(`If you borrow, reduce the next digit.`); hints.push(`Check: ${b} + (answer) = ${a}`); }
+  if(op==='*'){ hints.push(`Use multiplication facts. ${a}×${b%10} ...`); hints.push(`Split one number: ${a}×(10+${b%10}) if helpful.`); }
+  if(op==='/'){ hints.push(`Divide into equal groups of ${b}.`); hints.push(`How many groups fit into ${a}?`); }
+  return hints;
+}
+
+/* Submit handling: recognize multi-digit from canvas */
+$('#submitBtn').onclick = async ()=>{
+  if(!baseModel){ toast("Loading model..."); return; }
+  const guess = recognizeNumberFromCanvas();
+  if(guess===null){ feedback("I couldn't read the number — try writing bigger and darker."); return; }
+  const ok = guess === cur.answer;
+  state.stats[cur.op].total++; if(ok) state.stats[cur.op].ok++;
+
+  if(ok){
+    state.combo++; state.xp += 8 + Math.min(6, state.combo);
+    state.streak++; feedback(`Great job ${state.name||'Friend'}! I read ${guess}.`);
+    confetti(14); animateAvatar(true);
+    // quest & assignments progress
+    state.quest = (state.quest+1)%5;
+    for(const as of state.assignments){ if(!as.completed && as.op===cur.op){ as.progress = (as.progress||0)+1; if(as.progress>=as.count){ as.completed=true; state.xp+=15; toast(`Assignment ${as.title} complete! +15 XP`);} } }
+    // world progression: simple rule: after 8 correct in current world you move on
+    if(!state.worldCounts) state.worldCounts = 0; state.worldCounts++;
+    if(state.worldCounts >= 8 && state.worldProgress < 3){ state.worldProgress++; state.worldCounts=0; toast("World complete! New world unlocked!"); addBadge(`Cleared world ${state.worldProgress}`); // unlock pet
+      if(state.worldProgress===1) state.petsOwned.push('axolotl');
+      if(state.worldProgress===2) state.petsOwned.push('cat');
+      if(state.worldProgress===3) state.petsOwned.push('dragon');
+    }
+    checkBadgesAndUnlocks();
+    nextQuestion();
+  } else {
+    state.combo=0; state.streak=0; feedback(`Not yet — I read ${guess}. Try again.`); animateAvatar(false);
+    // add for review later
+    state.missed.push({a:cur.a,b:cur.b,op:cur.op,answer:cur.answer});
+  }
+  state.recent.unshift({ok,ts:Date.now()}); state.recent = state.recent.slice(0,80);
+  // level by xp
+  const newLevel = Math.floor(state.xp/80)+1; if(newLevel>state.level){ state.level=newLevel; addBadge(`Level ${state.level}`); }
+  updateHUD(); save();
+};
+
+/* hint & review buttons */
+$('#hintBtn').onclick = ()=>{
+  const h = hintForCurrent();
+  if(hintStep >= h.length) { feedback("No more hints. Try another way!"); return; }
+  feedback(h[hintStep++]);
+  usingHint=true;
+};
+$('#reviewBtn').onclick = ()=> { state.review=true; if(state.missed.length===0) toast("No missed questions"); else nextQuestion(); };
+
+/* world map click handlers */
+function updateMapUI(){
+  const worlds = [$('#world0'),$('#world1'),$('#world2'),$('#world3')];
+  worlds.forEach((w,i)=>{
+    if(i<=state.worldProgress) { w.classList.remove('locked'); w.style.opacity=1; } else { w.classList.add('locked'); w.style.opacity=0.5; }
+    w.onclick = ()=> {
+      if(i>state.worldProgress) { toast("Locked — progress to unlock"); return; }
+      // open world hub (simple): start questions within this world
+      toast(`Entering world ${i}`);
+      // set some world-specific behavior for boss triggers etc.
+    };
   });
 }
+updateMapUI();
 
-// -------------------- Review mode --------------------
-function startReview(){
-  reviewQuestions = JSON.parse(localStorage.getItem("missedQuestions") || "[]");
-  if(reviewQuestions.length === 0){
-    alert("No missed questions to review!");
-    return;
+/* boss challenge: simple rule: 5 problems correct in a row without mistakes */
+let bossActive=false;
+$('#bossStartBtn')?.onclick = ()=> {
+  bossActive=true; state.bossGoal = 5; state.bossProgress=0; $('#bossModal').style.display='none'; toast("Boss started: solve 5 in a row!");
+}
+function showBossModal(text){ $('#bossText').textContent = text; $('#bossModal').style.display='flex'; }
+function hideBoss(){ $('#bossModal').style.display='none'; }
+
+/* assignments */
+$('#assignBtn').onclick = ()=> { showAssignModal(); };
+$('#viewAssignBtn').onclick = ()=> { showAssignModal(); };
+
+function showAssignModal(){
+  $('#assignModal').style.display='flex';
+  renderAssignments();
+}
+function hideAssignModal(){ $('#assignModal').style.display='none'; }
+function renderAssignments(){
+  const list = $('#assignmentsList'); list.innerHTML='';
+  for(const a of state.assignments){
+    const el = document.createElement('div'); el.className='card'; el.style.padding='6px';
+    el.innerHTML = `<b>${a.title}</b> (${a.op}) ${a.progress||0}/${a.count} ${a.completed? '✅':''} <button class="ghost">Delete</button>`;
+    el.querySelector('button').onclick = ()=> { state.assignments = state.assignments.filter(x=>x!==a); renderAssignments(); save(); }
+    list.appendChild(el);
   }
-  reviewMode = true;
-  reviewIndex = 0;
-  loadReviewQuestion();
+}
+$('#saveAssignBtn').onclick = ()=>{
+  const id = 'as_'+Date.now();
+  const title = $('#assignTitle').value || 'Assignment';
+  const op = $('#assignOp').value; const max = parseInt($('#assignMax').value)||10; const count = parseInt($('#assignCount').value)||10;
+  state.assignments.push({id,title,op,max,count,progress:0,completed:false}); save();
+  renderAssignments();
+};
+
+/* training UI */
+let trainDigit = 0;
+$('#trainBtn').onclick = ()=>{
+  $('#trainModal').style.display='flex';
+  trainDigit=0; $('#trainDigitLabel').textContent = `Draw: ${trainDigit}`;
+  tctx.clearRect(0,0,tCanvas.width,tCanvas.height);
+};
+$('#saveSampleBtn').onclick = ()=>{
+  const arr = canvasToArr28(tCanvas);
+  if(!state.userSamples[trainDigit]) state.userSamples[trainDigit]=[];
+  state.userSamples[trainDigit].push(Array.from(arr));
+  toast(`Saved sample for ${trainDigit}`);
+  save();
+};
+$('#nextDigitBtn').onclick = ()=> { trainDigit = (trainDigit+1)%10; $('#trainDigitLabel').textContent=`Draw: ${trainDigit}`; tctx.clearRect(0,0,tCanvas.width,tCanvas.height); };
+$('#finishTrainBtn').onclick = ()=> { $('#trainModal').style.display='none'; toast('Training saved'); };
+
+/* utilities and small UI helpers */
+function feedback(msg){ $('#feedback').textContent = msg; }
+function toast(msg){ feedback(msg); setTimeout(()=>{ if($('#feedback').textContent===msg) $('#feedback').textContent=''; },2500); }
+function addBadge(name){ if(state.badges.includes(name)) return; state.badges.push(name); toast('Badge: '+name); updateHUD(); save(); }
+function checkBadgesAndUnlocks(){
+  if(state.xp>=100) addBadge('100 XP');
+  if(state.combo>=5) addBadge('Combo 5');
+  if(state.streak>=10) addBadge('10 Streak');
+  // unlock themes/items in items list
+  if(state.level>=3 && !state.items.includes('rocket')) { state.items.push('rocket'); toast('Unlocked rocket!'); }
+  if(state.xp>=120 && !state.items.includes('plant')) { state.items.push('plant'); toast('Unlocked plant!'); }
 }
 
-function loadReviewQuestion(){
-  if(reviewIndex >= reviewQuestions.length){
-    alert("Review complete! 🎉");
-    reviewMode = false;
-    newQuestion();
-    return;
+/* avatar animations & confetti */
+function animateAvatar(ok){ const a = $('#avatar'); if(ok){ a.style.transform='scale(1.3) rotate(8deg)'; setTimeout(()=>a.style.transform='',350);} else { a.style.transform='rotate(-10deg)'; setTimeout(()=>a.style.transform='',350);} }
+function confetti(n=12){ for(let i=0;i<n;i++){ const e=document.createElement('div'); e.textContent='✨'; e.style.position='absolute'; e.style.left=Math.random()*innerWidth+'px'; e.style.top='10px'; e.style.fontSize = (12+Math.random()*18)+'px'; document.body.appendChild(e); const id=setInterval(()=>{ e.style.top = (parseFloat(e.style.top)+2+Math.random()*3)+'px'; if(parseFloat(e.style.top)>innerHeight){ clearInterval(id); e.remove(); } },16); } }
+
+/* small helpers */
+function $(s){ return document.querySelector(s); }
+function $$(s){ return Array.from(document.querySelectorAll(s)); }
+function randInt(n){ return Math.floor(Math.random()*n); }
+
+/* init UI bindings */
+$('#startBtn').onclick = ()=>{
+  state.name = $('#name').value.trim() || 'Friend';
+  state.baseMax = parseInt($('#maxNum').value)||20;
+  state.theme = $('#themeSelect').value;
+  $$('.op').forEach(c=> state.ops[c.value] = c.checked);
+  // show game area
+  $('#settingsCard').style.display='none';
+  $('#gameCard').style.display='block';
+  updateHUD(); nextQuestion(); updateMapUI(); save();
+};
+$('#reviewBtn').onclick = ()=> { if(state.missed.length===0) toast('No missed'); else { state.review=true; nextQuestion(); } };
+
+/* map UI */
+function updateMapUI(){
+  for(let i=0;i<4;i++){
+    const w = $(`#world${i}`);
+    if(i<=state.worldProgress){ w.classList.remove('locked'); w.style.opacity=1; } else { w.classList.add('locked'); w.style.opacity=0.5; }
   }
-  let q = reviewQuestions[reviewIndex];
-  currentAnswer = q.answer;
-  document.getElementById("question").innerText = q.question + " = ?";
-  recognizedDigits = [];
-  firstAttemptWrong = false;
-  createDigitBoxes(currentAnswer.toString().length);
-  document.getElementById("feedback").innerText = "";
 }
+
+/* render assignments list fragment on page */
+function renderAssignmentsMini(){
+  const el = $('#assignmentsList');
+  if(!el) return;
+  el.innerHTML='';
+  for(const as of state.assignments){
+    const d = document.createElement('div'); d.textContent = `${as.title} (${as.op}) ${as.progress||0}/${as.count}`; el.appendChild(d);
+  }
+}
+
+/* view assignments button */
+$('#viewAssignBtn').onclick = ()=> { showAssignModal(); };
+
+/* assign modal show/hide functions used above */
+function showAssignModal(){ $('#assignModal').style.display='flex'; renderAssignments(); }
+function hideAssignModal(){ $('#assignModal').style.display='none'; }
+
+/* remaining modal handlers */
+function hideBoss(){ $('#bossModal').style.display='none'; }
+
+/* misc onload */
+load(); updateHUD(); updateMapUI();
+
 </script>
 </body>
 </html>
