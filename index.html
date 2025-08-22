@@ -51,7 +51,6 @@ let score = 0;
 let currentMode = 'addition';
 let max = 20;
 
-// Generate a new math problem
 function generateQuestion() {
     let a = Math.floor(Math.random() * max) + 1;
     let b = Math.floor(Math.random() * max) + 1;
@@ -82,7 +81,6 @@ function generateQuestion() {
     document.getElementById('wrongFeedback').innerText = '';
 }
 
-// Check typed answer
 function checkAnswer() {
     const input = document.getElementById('answerInput').value.trim();
     const userAnswer = Number(input);
@@ -106,19 +104,18 @@ function checkAnswer() {
     }
 }
 
-// Start game after choosing mode and max number
 document.getElementById('startBtn').addEventListener('click', () => {
     currentMode = document.getElementById('mode').value;
     let inputMax = parseInt(document.getElementById('maxNumber').value);
     max = isNaN(inputMax) || inputMax < 1 ? 20 : inputMax;
 
+    // Hide start screen and show game screen
     document.getElementById('startScreen').style.display = 'none';
-    document.getElementById('gameScreen').style.display = '';
+    document.getElementById('gameScreen').style.display = 'block';
 
     generateQuestion();
 });
 
-// Event listeners
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
