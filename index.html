@@ -7,14 +7,25 @@
 <style>
   body {
     font-family: Arial, sans-serif;
-    background-color: #ffe4e6;
+    background-color: #ffe4e1;
+    text-align: center;
     margin: 0;
     padding: 0;
-    text-align: center;
   }
-  h1 { color: #d63384; }
-  .screen { display: none; padding: 20px; }
-  input, button { font-size: 18px; }
+  h1, h2 {
+    color: #d6336c;
+  }
+  .screen {
+    display: none;
+    padding: 20px;
+  }
+  button {
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 18px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -24,194 +35,252 @@
   }
   #keypad button {
     width: 80px;
-    height: 60px;
-    font-size: 22px;
-    border-radius: 8px;
+    height: 70px;
+    font-size: 24px;
+    border-radius: 10px;
     cursor: pointer;
-    background-color: #ffc0cb;
-    border: none;
   }
-  .top-button, .start-button {
-    background-color: #ff85a2;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
+  #feedback {
+    margin-top: 10px;
+    font-size: 20px;
+    min-height: 28px;
+  }
+  img.avatar {
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    border-radius: 10px;
     margin: 5px;
-    cursor: pointer;
-    font-size: 18px;
-    color: white;
+    border: 3px solid transparent;
   }
-  img.avatar-img { width: 80px; height: 80px; margin: 5px; cursor: pointer; border-radius: 8px; border: 2px solid #fff; }
+  img.avatar.selected {
+    border-color: #d6336c;
+  }
+  .top-score-item {
+    margin: 5px 0;
+    font-size: 18px;
+  }
 </style>
 </head>
 <body>
 
 <!-- Load Screen -->
-<div id="loadScreen" class="screen" style="display:block;">
+<div id="loadScreen" class="screen">
   <h1>Cozy Math Game</h1>
   <input type="text" id="playerName" placeholder="Enter your name"><br><br>
-  <button class="start-button" onclick="startGame()">Start Game</button>
-  <button class="top-button" onclick="showTopScores()">Top Scores</button>
-  <button class="top-button" onclick="showAvatarScreen()">Avatar</button>
-  <div id="streakInfo"></div>
-  <div id="dailyScoreInfo"></div>
-</div>
-
-<!-- Game Screen -->
-<div id="gameScreen" class="screen">
-  <h2 id="greeting"></h2>
-  <div id="question"></div>
-  <input type="text" id="answerInput" readonly><br>
-  <div id="keypad"></div>
-  <button class="start-button" onclick="submitAnswer()">Submit</button>
-  <button class="top-button" onclick="backToLoad()">Back to Settings</button>
+  <label>Choose mode:</label>
+  <select id="modeSelect">
+    <option value="addition">Addition</option>
+    <option value="subtraction">Subtraction</option>
+    <option value="mixed">Mixed</option>
+  </select><br><br>
+  <label>Max number:</label>
+  <input type="number" id="maxNumber" value="20" min="1" max="50"><br><br>
+  <button onclick="startGame()">Start Game</button>
+  <button onclick="showTopScores()">Top Scores</button>
+  <button onclick="showAvatarScreen()">Avatar</button>
+  <p id="streakDisplay"></p>
+  <p id="dailyScoreDisplay"></p>
 </div>
 
 <!-- Avatar Screen -->
 <div id="avatarScreen" class="screen">
-  <h2>Choose Your Avatar</h2>
-  <div id="avatarChoices"></div>
-  <button class="top-button" onclick="backToLoad()">Back</button>
+  <h2>Select Avatar</h2>
+  <div>
+    <img src="https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar1.jpg" class="avatar" onclick="selectAvatar(this)">
+    <img src="https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar2.jpg" class="avatar" onclick="selectAvatar(this)">
+    <img src="https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar3.jpg" class="avatar" onclick="selectAvatar(this)">
+  </div>
+  <button onclick="backToLoad()">Back</button>
+</div>
+
+<!-- Game Screen -->
+<div id="gameScreen" class="screen">
+  <h2 id="question"></h2>
+  <input type="text" id="answerInput" readonly style="font-size:24px; width:120px;"><br>
+  <div id="keypad">
+    <button onclick="pressKey('1')">1</button>
+    <button onclick="pressKey('2')">2</button>
+    <button onclick="pressKey('3')">3</button>
+    <button onclick="pressKey('4')">4</button>
+    <button onclick="pressKey('5')">5</button>
+    <button onclick="pressKey('6')">6</button>
+    <button onclick="pressKey('7')">7</button>
+    <button onclick="pressKey('8')">8</button>
+    <button onclick="pressKey('9')">9</button>
+    <button onclick="pressKey('0')">0</button>
+    <button onclick="clearInput()">Clear</button>
+    <button onclick="submitAnswer()">Submit</button>
+  </div>
+  <div id="feedback"></div>
+  <button onclick="backToLoad()">Back to Settings</button>
 </div>
 
 <!-- Top Scores Screen -->
 <div id="topScoresScreen" class="screen">
   <h2>Top Scores</h2>
   <div id="topScoresList"></div>
-  <button class="top-button" onclick="backToLoad()">Back</button>
+  <button onclick="backToLoad()">Back</button>
 </div>
 
 <script>
-let player = '';
-let avatar = '';
+let currentPlayer = '';
+let currentMode = 'addition';
+let maxNumber = 20;
+let currentAnswer = 0;
 let streak = 0;
 let dailyScore = 0;
-let currentScore = 0;
+let gameScore = 0;
 let lastPlayDate = '';
-let questionNum1, questionNum2;
-let maxNumber = 20;
+let avatar = '';
+let topScores = JSON.parse(localStorage.getItem('topScores')) || [];
 
-const avatars = [
-  'https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar1.jpg',
-  'https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar2.jpg',
-  'https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar3.jpg'
-];
+function showScreen(screenId){
+  document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+  document.getElementById(screenId).style.display = 'block';
+}
 
-// Keypad setup
-function setupKeypad() {
-  const keypad = document.getElementById('keypad');
-  keypad.innerHTML = '';
-  const keys = ['1','2','3','4','5','6','7','8','9','0','Clear'];
-  keys.forEach(k => {
-    const btn = document.createElement('button');
-    btn.textContent = k;
-    btn.onclick = () => {
-      const input = document.getElementById('answerInput');
-      if(k === 'Clear') input.value = '';
-      else input.value += k;
-    };
-    keypad.appendChild(btn);
+function startGame(){
+  currentPlayer = document.getElementById('playerName').value.trim();
+  if(!currentPlayer){
+    alert('Please enter your name!');
+    return;
+  }
+  currentMode = document.getElementById('modeSelect').value;
+  maxNumber = parseInt(document.getElementById('maxNumber').value);
+  loadPlayerData();
+  gameScore = 0;
+  showScreen('gameScreen');
+  nextQuestion();
+}
+
+function backToLoad(){
+  showScreen('loadScreen');
+  updateLoadScreen();
+}
+
+function showAvatarScreen(){
+  showScreen('avatarScreen');
+  const savedAvatar = localStorage.getItem(currentPlayer + '_avatar');
+  document.querySelectorAll('img.avatar').forEach(img=>{
+    img.classList.remove('selected');
+    if(savedAvatar && img.src === savedAvatar) img.classList.add('selected');
   });
 }
 
-function startGame() {
-  player = document.getElementById('playerName').value.trim();
-  if(!player) { alert('Enter a name'); return; }
-  
-  // Load streak and score from localStorage
-  const storedStreak = JSON.parse(localStorage.getItem(player+'_streak')) || 0;
-  const storedDaily = JSON.parse(localStorage.getItem(player+'_dailyScore')) || 0;
-  const storedDate = localStorage.getItem(player+'_lastDate') || '';
-  const today = new Date().toISOString().split('T')[0];
-
-  if(storedDate !== today) { dailyScore = 0; lastPlayDate = today; } 
-  else { dailyScore = storedDaily; }
-
-  streak = storedStreak;
-  lastPlayDate = today;
-
-  document.getElementById('greeting').textContent = `Hello ${player}!`;
-  generateQuestion();
-  setupKeypad();
-  showScreen('gameScreen');
-  updateLoadScreenInfo();
+function selectAvatar(img){
+  avatar = img.src;
+  localStorage.setItem(currentPlayer + '_avatar', avatar);
+  document.querySelectorAll('img.avatar').forEach(i=>i.classList.remove('selected'));
+  img.classList.add('selected');
 }
 
-function generateQuestion() {
-  questionNum1 = Math.floor(Math.random() * maxNumber) + 1;
-  questionNum2 = Math.floor(Math.random() * maxNumber) + 1;
-  document.getElementById('question').textContent = `${questionNum1} + ${questionNum2} = ?`;
+function nextQuestion(){
+  let num1 = Math.floor(Math.random() * (maxNumber+1));
+  let num2 = Math.floor(Math.random() * (maxNumber+1));
+  let operator = currentMode;
+  if(currentMode==='mixed'){
+    operator = Math.random() < 0.5 ? 'addition' : 'subtraction';
+  }
+  if(operator==='subtraction' && num2>num1){
+    [num1,num2] = [num2,num1];
+  }
+  currentAnswer = operator==='addition'? num1+num2 : num1-num2;
+  document.getElementById('question').innerText = `${num1} ${operator==='addition'?'+':'-'} ${num2} = ?`;
+  document.getElementById('answerInput').value = '';
+  document.getElementById('feedback').innerText = '';
+}
+
+function pressKey(digit){
+  document.getElementById('answerInput').value += digit;
+}
+
+function clearInput(){
   document.getElementById('answerInput').value = '';
 }
 
-function submitAnswer() {
-  const ans = parseInt(document.getElementById('answerInput').value);
-  if(ans === questionNum1 + questionNum2) {
-    currentScore += 1;
-    dailyScore += 1;
-    localStorage.setItem(player+'_dailyScore', dailyScore);
-    streak += 1;
-    localStorage.setItem(player+'_streak', streak);
-    localStorage.setItem(player+'_lastDate', lastPlayDate);
-    alert(`🎉 Awesome, ${player}, that is correct! Your streak is now ${streak} days!`);
-    setTimeout(generateQuestion, 2000);
+function submitAnswer(){
+  const userAnswer = parseInt(document.getElementById('answerInput').value);
+  if(userAnswer===currentAnswer){
+    gameScore++;
+    incrementDailyScore();
+    handleStreak(true);
+    document.getElementById('feedback').innerText = `🎉 Awesome, ${currentPlayer}, that is correct! Your streak is now ${streak} days!`;
+    setTimeout(nextQuestion,2000);
+  }else{
+    handleStreak(false);
+    document.getElementById('feedback').innerText = `❌ Try again!`;
+  }
+}
+
+function incrementDailyScore(){
+  const today = new Date().toDateString();
+  let storedDate = localStorage.getItem(currentPlayer + '_dailyDate');
+  if(storedDate!==today){
+    dailyScore = 1;
+    localStorage.setItem(currentPlayer + '_dailyDate', today);
   } else {
-    alert('Oops, try again!');
+    dailyScore++;
   }
+  localStorage.setItem(currentPlayer + '_dailyScore', dailyScore);
 }
 
-function showScreen(screenId) {
-  document.querySelectorAll('.screen').forEach(s => s.style.display='none');
-  document.getElementById(screenId).style.display='block';
+function handleStreak(correct){
+  const today = new Date().toDateString();
+  let lastDate = localStorage.getItem(currentPlayer + '_lastStreakDate');
+  if(lastDate && lastDate!==today){
+    const diff = (new Date(today) - new Date(lastDate))/86400000;
+    if(diff>1) streak=0;
+  }
+  if(correct){
+    streak++;
+  } else {
+    streak=0;
+  }
+  localStorage.setItem(currentPlayer + '_streak', streak);
+  localStorage.setItem(currentPlayer + '_lastStreakDate', today);
 }
 
-function backToLoad() {
-  showScreen('loadScreen');
-  currentScore = 0;
-  updateLoadScreenInfo();
+function loadPlayerData(){
+  const storedStreak = parseInt(localStorage.getItem(currentPlayer + '_streak')) || 0;
+  streak = storedStreak;
+  dailyScore = parseInt(localStorage.getItem(currentPlayer + '_dailyScore')) || 0;
+  lastPlayDate = localStorage.getItem(currentPlayer + '_lastStreakDate') || '';
+  avatar = localStorage.getItem(currentPlayer + '_avatar') || '';
+  updateLoadScreen();
 }
 
-function updateLoadScreenInfo() {
-  document.getElementById('streakInfo').textContent = `Current Streak: ${streak} days`;
-  document.getElementById('dailyScoreInfo').textContent = `Daily Score: ${dailyScore}`;
+function updateLoadScreen(){
+  document.getElementById('streakDisplay').innerText = `Streak: ${streak} days`;
+  document.getElementById('dailyScoreDisplay').innerText = `Daily Score: ${dailyScore}`;
 }
 
-function showAvatarScreen() {
-  showScreen('avatarScreen');
-  const container = document.getElementById('avatarChoices');
-  container.innerHTML = '';
-  avatars.forEach(url => {
-    const img = document.createElement('img');
-    img.src = url;
-    img.className = 'avatar-img';
-    img.onclick = () => {
-      avatar = url;
-      localStorage.setItem(player+'_avatar', avatar);
-      backToLoad();
-    };
-    container.appendChild(img);
-  });
-}
-
-function showTopScores() {
+function showTopScores(){
   showScreen('topScoresScreen');
-  const list = document.getElementById('topScoresList');
-  list.innerHTML = '';
-  const scores = [];
-  for(let i=0; i<localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if(key.endsWith('_dailyScore')) {
-      const name = key.replace('_dailyScore','');
-      scores.push({name, score: localStorage.getItem(key)});
-    }
-  }
-  scores.sort((a,b)=>b.score - a.score);
-  scores.forEach(s => {
-    const div = document.createElement('div');
-    div.textContent = `${s.name}: ${s.score}`;
-    list.appendChild(div);
+  let scoresList = '';
+  topScores.sort((a,b)=>b.score-b.score);
+  topScores.forEach(s=>{
+    scoresList += `<div class="top-score-item">${s.name} - Score: ${s.score}, Streak: ${s.streak}</div>`;
   });
+  document.getElementById('topScoresList').innerHTML = scoresList;
 }
+
+function updateTopScores(){
+  const playerScoreIndex = topScores.findIndex(p=>p.name===currentPlayer);
+  if(playerScoreIndex>-1){
+    topScores[playerScoreIndex].score = Math.max(topScores[playerScoreIndex].score, gameScore);
+    topScores[playerScoreIndex].streak = Math.max(topScores[playerScoreIndex].streak, streak);
+  } else {
+    topScores.push({name: currentPlayer, score: gameScore, streak: streak});
+  }
+  localStorage.setItem('topScores', JSON.stringify(topScores));
+}
+
+window.addEventListener('beforeunload',()=>{
+  updateTopScores();
+});
+
+showScreen('loadScreen');
 </script>
 
 </body>
