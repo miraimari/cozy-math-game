@@ -1,176 +1,210 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Math Game</title>
-<style>
-  body { 
-      font-family: Arial, sans-serif; 
-      text-align: center; 
-      margin: 20px; 
+  <title>Math Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
       font-size: 24px;
-  }
-  input, select, button { 
-      font-size: 24px; 
-      padding: 10px; 
-      margin: 10px; 
-  }
-  #question { 
-      font-size: 36px; 
-      margin-top: 30px; 
-  }
-  #feedback { 
-      font-size: 32px; 
-      font-weight: bold; 
-      margin-top: 20px; 
-      color: green; 
-  }
-  #wrongFeedback { 
-      font-size: 28px; 
-      font-weight: bold; 
-      margin-top: 20px; 
-      color: red; 
-  }
-  #score { 
-      font-size: 28px; 
-      margin-top: 20px; 
-  }
-  #gameScreen { display: none; }
-</style>
+    }
+    input, select, button {
+      font-size: 24px;
+      padding: 10px;
+      margin: 10px;
+    }
+    #question {
+      font-size: 36px;
+      margin-top: 30px;
+    }
+    #feedback {
+      font-size: 32px;
+      font-weight: bold;
+      margin-top: 20px;
+      color: green;
+    }
+    #wrongFeedback {
+      font-size: 28px;
+      font-weight: bold;
+      margin-top: 20px;
+      color: red;
+    }
+    #score {
+      font-size: 28px;
+      margin-top: 20px;
+    }
+    #keypad button {
+      width: 60px;
+      height: 60px;
+      font-size: 28px;
+      margin: 5px;
+    }
+    #answerInput {
+      width: 150px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
 
-<h1>Math Game</h1>
+  <!-- Start Screen -->
+  <div id="startScreen">
+    <label for="playerName">Enter your name: </label>
+    <input type="text" id="playerName" placeholder="Your name"><br>
 
-<!-- Start Screen -->
-<div id="startScreen">
-  <label for="playerName">Enter your name: </label>
-  <input type="text" id="playerName" placeholder="Your name">
-  <br>
+    <label for="mode">Choose mode: </label>
+    <select id="mode">
+        <option value="addition">Addition only</option>
+        <option value="subtraction">Subtraction only</option>
+        <option value="mixed">Mixed</option>
+    </select><br>
 
-  <label for="mode">Choose mode: </label>
-  <select id="mode">
-      <option value="addition">Addition only</option>
-      <option value="subtraction">Subtraction only</option>
-      <option value="mixed">Mixed</option>
-  </select>
-  <br>
+    <label for="maxNumber">Choose max number for each number: </label>
+    <input type="number" id="maxNumber" value="20" min="1"><br>
 
-  <label for="maxNumber">Choose max number for each number: </label>
-  <input type="number" id="maxNumber" value="20" min="1">
-  <br>
+    <button id="startBtn">Start Game</button>
+  </div>
 
-  <button id="startBtn">Start Game</button>
-</div>
+  <!-- Game Screen -->
+  <div id="gameScreen" style="display:none;">
+    <div id="question"></div>
 
-<!-- Game Screen -->
-<div id="gameScreen">
-  <div id="question"></div>
-  <input type="text" id="answerInput" placeholder="Your answer">
-  <br>
-  <button id="submitBtn">Submit</button>
-  <button id="backBtn">Back to Settings</button>
+    <div id="answerInputContainer">
+      <input type="text" id="answerInput" placeholder="Your answer" readonly>
+    </div>
 
-  <div id="feedback"></div>
-  <div id="wrongFeedback"></div>
-  <div id="score">Score: 0</div>
-</div>
+    <div id="keypad">
+      <div>
+        <button class="numBtn">1</button>
+        <button class="numBtn">2</button>
+        <button class="numBtn">3</button>
+      </div>
+      <div>
+        <button class="numBtn">4</button>
+        <button class="numBtn">5</button>
+        <button class="numBtn">6</button>
+      </div>
+      <div>
+        <button class="numBtn">7</button>
+        <button class="numBtn">8</button>
+        <button class="numBtn">9</button>
+      </div>
+      <div>
+        <button id="clearBtn">C</button>
+        <button class="numBtn">0</button>
+        <button id="submitBtn">✔</button>
+      </div>
+    </div>
+
+    <div id="feedback"></div>
+    <div id="wrongFeedback"></div>
+    <div id="score">Score: 0</div>
+    <button id="backBtn">Back to Settings</button>
+  </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    let answer = 0;
-    let score = 0;
-    let currentMode = 'addition';
-    let max = 20;
-    let playerName = '';
+let playerName = '';
+let mode = 'addition';
+let maxNumber = 20;
+let score = 0;
+let answer = 0;
 
-    function generateQuestion() {
-        let a = Math.floor(Math.random() * max) + 1;
-        let b = Math.floor(Math.random() * max) + 1;
-        let operation = '+';
+const startScreen = document.getElementById('startScreen');
+const gameScreen = document.getElementById('gameScreen');
+const questionEl = document.getElementById('question');
+const feedbackEl = document.getElementById('feedback');
+const wrongFeedbackEl = document.getElementById('wrongFeedback');
+const scoreEl = document.getElementById('score');
+const answerInput = document.getElementById('answerInput');
 
-        if (currentMode === 'addition') {
-            operation = '+';
-            answer = a + b;
-        } else if (currentMode === 'subtraction') {
-            if (a < b) [a, b] = [b, a];
-            operation = '-';
-            answer = a - b;
-        } else { // mixed
-            if (Math.random() < 0.5) {
-                operation = '+';
-                answer = a + b;
-            } else {
-                if (a < b) [a, b] = [b, a];
-                operation = '-';
-                answer = a - b;
-            }
-        }
+document.getElementById('startBtn').addEventListener('click', () => {
+  const nameInput = document.getElementById('playerName').value.trim();
+  if (nameInput === '') {
+    alert("Please enter your name!");
+    return;
+  }
+  playerName = nameInput;
+  mode = document.getElementById('mode').value;
+  maxNumber = Number(document.getElementById('maxNumber').value);
+  if (isNaN(maxNumber) || maxNumber < 1) {
+    alert("Please enter a valid max number!");
+    return;
+  }
+  score = 0;
+  scoreEl.innerText = `Score: ${score}`;
+  feedbackEl.innerText = '';
+  wrongFeedbackEl.innerText = '';
 
-        document.getElementById('question').innerText = `What is ${a} ${operation} ${b}?`;
-        document.getElementById('answerInput').value = '';
-        document.getElementById('answerInput').focus();
-        document.getElementById('feedback').innerText = '';
-        document.getElementById('wrongFeedback').innerText = '';
-    }
-
-    function checkAnswer() {
-        const input = document.getElementById('answerInput').value.trim();
-        const userAnswer = Number(input);
-
-        if (input === '' || isNaN(userAnswer)) {
-            alert("Please enter a number!");
-            return;
-        }
-
-        if (userAnswer === answer) {
-            score++;
-            document.getElementById('feedback').innerText = `✅ Correct, ${playerName}!`;
-            document.getElementById('wrongFeedback').innerText = '';
-            document.getElementById('score').innerText = `Score: ${score}`;
-            setTimeout(generateQuestion, 1000);
-        } else {
-            document.getElementById('wrongFeedback').innerText = `❌ Wrong, ${playerName}! Try again.`;
-            document.getElementById('feedback').innerText = '';
-            document.getElementById('answerInput').value = '';
-            document.getElementById('answerInput').focus();
-        }
-    }
-
-    document.getElementById('startBtn').addEventListener('click', () => {
-        const nameInput = document.getElementById('playerName').value.trim();
-        if (nameInput === '') {
-            alert("Please enter your name!");
-            return;
-        }
-        playerName = nameInput;
-
-        currentMode = document.getElementById('mode').value;
-        let inputMax = parseInt(document.getElementById('maxNumber').value);
-        max = isNaN(inputMax) || inputMax < 1 ? 20 : inputMax;
-
-        document.getElementById('startScreen').style.display = 'none';
-        document.getElementById('gameScreen').style.display = 'block';
-
-        score = 0;
-        document.getElementById('score').innerText = `Score: ${score}`;
-
-        generateQuestion();
-    });
-
-    document.getElementById('submitBtn').addEventListener('click', checkAnswer);
-    document.getElementById('answerInput').addEventListener('keydown', function(e){
-        if (e.key === 'Enter') checkAnswer();
-    });
-
-    document.getElementById('backBtn').addEventListener('click', () => {
-        document.getElementById('gameScreen').style.display = 'none';
-        document.getElementById('startScreen').style.display = 'block';
-        score = 0;
-        document.getElementById('score').innerText = `Score: ${score}`;
-    });
+  startScreen.style.display = 'none';
+  gameScreen.style.display = 'block';
+  generateQuestion();
 });
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  gameScreen.style.display = 'none';
+  startScreen.style.display = 'block';
+});
+
+document.querySelectorAll('.numBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    answerInput.value += btn.innerText;
+  });
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  answerInput.value = '';
+});
+
+document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+
+function generateQuestion() {
+  answerInput.value = '';
+  answerInput.focus();
+  let num1 = Math.floor(Math.random() * (maxNumber + 1));
+  let num2 = Math.floor(Math.random() * (maxNumber + 1));
+  let op = '+';
+  if (mode === 'subtraction') {
+    op = '-';
+  } else if (mode === 'mixed') {
+    op = Math.random() < 0.5 ? '+' : '-';
+  }
+
+  if (op === '-') {
+    // ensure positive result
+    if (num1 < num2) [num1, num2] = [num2, num1];
+    answer = num1 - num2;
+  } else {
+    answer = num1 + num2;
+  }
+
+  questionEl.innerText = `${num1} ${op} ${num2} = ?`;
+  feedbackEl.innerText = '';
+  wrongFeedbackEl.innerText = '';
+}
+
+function checkAnswer() {
+  const input = answerInput.value.trim();
+  const userAnswer = Number(input);
+  if (input === '' || isNaN(userAnswer)) {
+    alert("Please enter a number!");
+    return;
+  }
+
+  if (userAnswer === answer) {
+    score++;
+    scoreEl.innerText = `Score: ${score}`;
+    feedbackEl.innerText = `✅ Correct, ${playerName}!`;
+    wrongFeedbackEl.innerText = '';
+    // Wait 3 seconds before next question
+    setTimeout(generateQuestion, 3000);
+  } else {
+    wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
+    feedbackEl.innerText = '';
+    answerInput.value = '';
+    answerInput.focus();
+  }
+}
 </script>
 
 </body>
