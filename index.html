@@ -41,15 +41,15 @@
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
+    gap: 2px; /* very small gap */
     justify-items: center;
     margin-top: 10px;
   }
 
   #keypad button {
-    width: 70px;
-    height: 60px;
-    font-size: 20px;
+    width: 80px;
+    height: 70px;
+    font-size: 22px;
     border-radius: 8px;
     cursor: pointer;
   }
@@ -64,7 +64,7 @@
   @media (max-width: 400px) {
     #question { font-size: 20px; }
     #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 60px; height: 50px; font-size: 18px; }
+    #keypad button { width: 60px; height: 55px; font-size: 18px; }
   }
 </style>
 </head>
@@ -81,6 +81,11 @@
   </select><br>
   <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
   <button id="startBtn">Start Game</button>
+  
+  <div id="dailyReward" style="font-size: 18px; color: orange; margin-top: 10px; display:none;">
+    🎉 Daily Streak Reward! 🎉
+  </div>
+
   <div id="streak">Streak: 0 days</div>
   <div id="highStreak">Highest Streak: 0 days</div>
 </div>
@@ -133,12 +138,16 @@ function updateStreak() {
   streak = Number(localStorage.getItem('streak') || 0);
   highStreak = Number(localStorage.getItem('highStreak') || 0);
 
+  let newReward = false;
+
   if (lastPlayed === today) {
-    // already played today
+    newReward = false;
   } else if (lastPlayed === new Date(Date.now() - 86400000).toDateString()) {
     streak++;
+    newReward = true;
   } else {
     streak = 1;
+    newReward = true;
   }
 
   if (streak > highStreak) highStreak = streak;
@@ -149,6 +158,9 @@ function updateStreak() {
 
   document.getElementById('streak').innerText = `Streak: ${streak} day${streak > 1 ? 's' : ''}`;
   document.getElementById('highStreak').innerText = `Highest Streak: ${highStreak} day${highStreak > 1 ? 's' : ''}`;
+
+  const rewardEl = document.getElementById('dailyReward');
+  rewardEl.style.display = newReward ? 'block' : 'none';
 }
 
 document.getElementById('startBtn').addEventListener('click', () => {
@@ -167,12 +179,12 @@ document.getElementById('startBtn').addEventListener('click', () => {
   startScreen.style.display = 'none';
   gameScreen.style.display = 'block';
   generateQuestion();
-  updateStreak();
 });
 
 document.getElementById('backBtn').addEventListener('click', () => {
   gameScreen.style.display = 'none';
   startScreen.style.display = 'block';
+  updateStreak();
 });
 
 document.querySelectorAll('.numBtn').forEach(btn => {
@@ -227,6 +239,9 @@ function checkAnswer() {
     answerInput.focus();
   }
 }
+
+// initialize streak on page load
+updateStreak();
 </script>
 
 </body>
