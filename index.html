@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Math Game - 1-Digit Addition</title>
+<title>Math Game</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
   input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
@@ -33,7 +33,7 @@
 let answer = 0;
 let score = 0;
 
-// Generate a 1-digit addition problem
+// Generate a new 1-digit addition problem
 function generateQuestion() {
     const a = Math.floor(Math.random() * 9) + 1;
     const b = Math.floor(Math.random() * 9) + 1;
@@ -42,20 +42,21 @@ function generateQuestion() {
     document.getElementById('question').innerText = `What is ${a} + ${b}?`;
     document.getElementById('answerInput').value = '';
     document.getElementById('answerInput').focus();
+
+    document.getElementById('gameScreen').style.display = 'block';
+    document.getElementById('feedbackScreen').style.display = 'none';
 }
 
 // Show feedback screen
 function showFeedback(correct) {
     document.getElementById('gameScreen').style.display = 'none';
     document.getElementById('feedbackScreen').style.display = 'block';
-    if (correct) {
-        document.getElementById('feedbackMessage').innerText = "✅ Correct!";
-    } else {
-        document.getElementById('feedbackMessage').innerText = `❌ Wrong! Correct answer: ${answer}`;
-    }
+    document.getElementById('feedbackMessage').innerText = correct 
+        ? "✅ Correct!" 
+        : `❌ Wrong! Correct answer: ${answer}`;
 }
 
-// Handle answer submission
+// Check the typed answer
 function checkAnswer() {
     const input = document.getElementById('answerInput').value.trim();
     const userAnswer = Number(input);
@@ -76,11 +77,7 @@ function checkAnswer() {
 }
 
 // Next button click
-document.getElementById('nextBtn').addEventListener('click', () => {
-    document.getElementById('feedbackScreen').style.display = 'none';
-    document.getElementById('gameScreen').style.display = 'block';
-    generateQuestion();
-});
+document.getElementById('nextBtn').addEventListener('click', generateQuestion);
 
 // Submit button & Enter key
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
@@ -88,7 +85,7 @@ document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
 });
 
-// Start first question
+// Start the first question
 generateQuestion();
 </script>
 
