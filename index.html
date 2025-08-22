@@ -23,7 +23,7 @@
 <script>
 let answer = 0;
 
-// Generate a random arithmetic problem
+// Generate a new arithmetic problem
 function generateQuestion() {
     let a = Math.floor(Math.random() * 50) + 1;
     let b = Math.floor(Math.random() * 50) + 1;
@@ -44,7 +44,12 @@ function generateQuestion() {
 
 // Check the typed answer
 function checkAnswer() {
-    let userAnswer = parseInt(document.getElementById('answerInput').value);
+    let input = document.getElementById('answerInput').value.trim();
+    if (input === '') {
+        document.getElementById('result').innerText = "Please enter a number!";
+        return;
+    }
+    let userAnswer = Number(input);
     if (userAnswer === answer) {
         document.getElementById('result').innerText = "Correct! 🎉";
     } else {
@@ -53,10 +58,13 @@ function checkAnswer() {
     generateQuestion();
 }
 
-// Event listener
+// Event listeners
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+document.getElementById('answerInput').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') checkAnswer();
+});
 
-// Start the first question
+// Start first question
 generateQuestion();
 </script>
 
