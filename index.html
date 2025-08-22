@@ -33,7 +33,7 @@
   #feedback { color: green; }
   #wrongFeedback { color: red; }
 
-  #score, #streak, #highStreak {
+  #score {
     font-size: 18px;
     margin-top: 10px;
   }
@@ -49,22 +49,22 @@
   #keypad button {
     width: 70px;
     height: 60px;
-    font-size: 22px;
-    border-radius: 10px;
+    font-size: 20px;
+    border-radius: 8px;
     cursor: pointer;
   }
 
   #answerInput {
     width: 70%;
     text-align: center;
-    font-size: 22px;
+    font-size: 20px;
     margin-top: 10px;
   }
 
   @media (max-width: 400px) {
     #question { font-size: 20px; }
     #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 60px; height: 55px; font-size: 20px; }
+    #keypad button { width: 60px; height: 50px; font-size: 18px; }
   }
 </style>
 </head>
@@ -81,6 +81,8 @@
   </select><br>
   <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
   <button id="startBtn">Start Game</button>
+  <div id="streak">Streak: 0 days</div>
+  <div id="highStreak">Highest Streak: 0 days</div>
 </div>
 
 <div id="gameScreen" style="display:none;">
@@ -105,8 +107,6 @@
   <div id="feedback"></div>
   <div id="wrongFeedback"></div>
   <div id="score">Score: 0</div>
-  <div id="streak">Streak: 0 days</div>
-  <div id="highStreak">Highest Streak: 0 days</div>
   <button id="backBtn">Back to Settings</button>
 </div>
 
@@ -125,8 +125,6 @@ const questionEl = document.getElementById('question');
 const feedbackEl = document.getElementById('feedback');
 const wrongFeedbackEl = document.getElementById('wrongFeedback');
 const scoreEl = document.getElementById('score');
-const streakEl = document.getElementById('streak');
-const highStreakEl = document.getElementById('highStreak');
 const answerInput = document.getElementById('answerInput');
 
 function updateStreak() {
@@ -136,24 +134,21 @@ function updateStreak() {
   highStreak = Number(localStorage.getItem('highStreak') || 0);
 
   if (lastPlayed === today) {
-    // already played today, do nothing
+    // already played today
   } else if (lastPlayed === new Date(Date.now() - 86400000).toDateString()) {
-    // played yesterday, increment streak
     streak++;
   } else {
-    // missed a day, reset streak
     streak = 1;
   }
 
-  // update high streak if needed
   if (streak > highStreak) highStreak = streak;
 
   localStorage.setItem('streak', streak);
   localStorage.setItem('highStreak', highStreak);
   localStorage.setItem('lastPlayed', today);
 
-  streakEl.innerText = `Streak: ${streak} day${streak > 1 ? 's' : ''}`;
-  highStreakEl.innerText = `Highest Streak: ${highStreak} day${highStreak > 1 ? 's' : ''}`;
+  document.getElementById('streak').innerText = `Streak: ${streak} day${streak > 1 ? 's' : ''}`;
+  document.getElementById('highStreak').innerText = `Highest Streak: ${highStreak} day${highStreak > 1 ? 's' : ''}`;
 }
 
 document.getElementById('startBtn').addEventListener('click', () => {
@@ -171,8 +166,8 @@ document.getElementById('startBtn').addEventListener('click', () => {
 
   startScreen.style.display = 'none';
   gameScreen.style.display = 'block';
-  updateStreak();
   generateQuestion();
+  updateStreak();
 });
 
 document.getElementById('backBtn').addEventListener('click', () => {
