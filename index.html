@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<h1>Math Game - 1-Digit Addition</h1>
+<h1>Math Game - Addition up to 20</h1>
 
 <div id="question"></div>
 <input type="text" id="answerInput" placeholder="Your answer">
@@ -29,10 +29,10 @@
 let answer = 0;
 let score = 0;
 
-// Generate a new 1-digit addition problem
+// Generate a new addition problem with numbers 1-20
 function generateQuestion() {
-    const a = Math.floor(Math.random() * 9) + 1;
-    const b = Math.floor(Math.random() * 9) + 1;
+    const a = Math.floor(Math.random() * 20) + 1; // 1 to 20
+    const b = Math.floor(Math.random() * 20) + 1; // 1 to 20
     answer = a + b;
 
     document.getElementById('question').innerText = `What is ${a} + ${b}?`;
@@ -64,7 +64,6 @@ function checkAnswer() {
         document.getElementById('feedback').innerText = '';
         document.getElementById('answerInput').value = '';
         document.getElementById('answerInput').focus();
-        // Do NOT show the correct answer
     }
 
     document.getElementById('score').innerText = `Score: ${score}`;
