@@ -2,25 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Adaptive Flash Math</title>
+<title>Fun Math App 🧮</title>
 <style>
-body { font-family: sans-serif; text-align: center; background: #f9fafc; }
+body { font-family: sans-serif; text-align: center; background: #f0f4f8; }
 h1 { margin-top: 10px; }
 canvas { border: 2px solid #333; background: white; margin: 5px; touch-action: none; }
 button { margin: 10px; padding: 10px 20px; font-size: 18px; }
 .stats { margin: 15px; font-size: 18px; }
 .digit-boxes { display: flex; justify-content: center; flex-wrap: wrap; }
+#badges div { margin: 3px; font-size: 18px; color: green; }
 </style>
 </head>
 <body>
-<h1>Adaptive Flash Math ✏️</h1>
+<h1>Fun Math App ✏️</h1>
 <div class="stats">
-<span id="streak">Streak: 0</span> | 
-<span id="xp">XP: 0</span>
+  <span id="streak">Streak: 0</span> | 
+  <span id="dailyStreak">Daily Streak: 0</span> | 
+  <span id="xp">XP: 0</span> | 
+  <span id="level">Level: 1</span>
 </div>
+<div id="badges"></div>
 
 <h2 id="question">Loading...</h2>
-
 <div class="digit-boxes" id="digitBoxes"></div>
 
 <button onclick="clearAll()">Clear All</button>
@@ -36,20 +39,61 @@ button { margin: 10px; padding: 10px 20px; font-size: 18px; }
 let model;
 async function loadModel() {
   model = await tf.loadLayersModel("https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json");
+  updateDailyStreak();
   newQuestion();
 }
 loadModel();
 
-let streak = 0, xp = 0;
+// Game state
+let streak = 0, xp = 0, level = 1;
 let currentAnswer = 0;
 let recognizedDigits = [];
-
+let badgesEarned = [];
 const digitBoxesContainer = document.getElementById("digitBoxes");
 
-// Adaptive difficulty by grade (K–5)
+// Daily streak
+function updateDailyStreak() {
+  const today = new Date().toDateString();
+  const lastPlayed = localStorage.getItem("lastPlayed");
+  let dailyStreak = parseInt(localStorage.getItem("dailyStreak")) || 0;
+
+  if(lastPlayed) {
+    const lastDate = new Date(lastPlayed);
+    const diffDays = Math.floor((new Date(today) - lastDate) / (1000*60*60*24));
+    if(diffDays === 1) dailyStreak++;
+    else if(diffDays > 1) dailyStreak = 1;
+  } else dailyStreak = 1;
+
+  localStorage.setItem("dailyStreak", dailyStreak);
+  localStorage.setItem("lastPlayed", today);
+  document.getElementById("dailyStreak").innerText = "Daily Streak: " + dailyStreak;
+
+  if(dailyStreak === 7) showBadge("7-Day Streak! 🌟");
+}
+
+// Badges
+function showBadge(name) {
+  if (!badgesEarned.includes(name)) {
+    badgesEarned.push(name);
+    const badgeDiv = document.getElementById("badges");
+    const badge = document.createElement("div");
+    badge.innerText = "🏅 " + name;
+    badgeDiv.appendChild(badge);
+  }
+}
+
+// Levels
+function checkLevelUp() {
+  if(xp >= level*20){
+    level++;
+    document.getElementById("level").innerText = "Level: " + level;
+    showBadge("Level Up! 🎉");
+  }
+}
+
+// Difficulty
 function getDifficulty() {
-  // You can change this or ask the user
-  return Math.floor(Math.random()*6); // 0=K, 5=5th
+  return Math.min(level-1, 5); // scales with level
 }
 
 function newQuestion() {
@@ -60,14 +104,14 @@ function newQuestion() {
   else if(grade <=3) maxNum = 50;
   else maxNum = 200;
   if(grade>=4) operations.push("*");
-  
+
   let op = operations[Math.floor(Math.random()*operations.length)];
   let a = Math.floor(Math.random()*maxNum)+1;
   let b = Math.floor(Math.random()*maxNum)+1;
-  if(op === "-" && b > a) [a,b]=[b,a]; // avoid negative
-  
+  if(op === "-" && b > a) [a,b]=[b,a];
+
   currentAnswer = op === "+" ? a+b : op === "-" ? a-b : a*b;
-  
+
   document.getElementById("question").innerText = `${a} ${op} ${b} = ?`;
   recognizedDigits = [];
   createDigitBoxes(currentAnswer.toString().length);
@@ -130,12 +174,21 @@ function submitAll(){
     if(guess===currentAnswer){
       streak++; xp+=5;
       document.getElementById("feedback").innerText="✅ Correct!";
+
+      // badges
+      if(streak===3) showBadge("First Streak! 🔥");
+      if(currentAnswer>10) showBadge("Math Master! 🏆");
+      if(document.getElementById("question").innerText.includes("*")) showBadge("Multiplication Pro! ✨");
+
     }else{
       streak=0; xp=Math.max(0,xp-1);
       document.getElementById("feedback").innerText="❌ Try again!";
     }
+
     document.getElementById("streak").innerText="Streak: "+streak;
     document.getElementById("xp").innerText="XP: "+xp;
+
+    checkLevelUp();
     newQuestion();
   });
 }
