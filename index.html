@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h1>Handwriting Math Game</h1>
+<h1>Multi-Digit Handwriting Math Game</h1>
 <div id="question"></div>
 <canvas id="canvas" width="300" height="150"></canvas>
 <br>
@@ -49,8 +49,8 @@ function generateQuestion() {
     }
 
     document.getElementById('question').innerText = `What is ${a} ${op} ${b}?`;
-    clearCanvas();
     document.getElementById('result').innerText = '';
+    clearCanvas();
 }
 
 // Canvas drawing
@@ -76,59 +76,74 @@ function clearCanvas() {
     ctx.beginPath();
 }
 
-// Preprocess canvas: find bounding boxes of digits and predict each
-async function checkAnswer() {
-    if (!model) return alert("Model not loaded yet!");
+// Split canvas into digit boxes
+function getDigitBoxes(imageData) {
+    let width = imageData.width;
+    let height = imageData.height;
+    let data = imageData.data;
+    let columns = new Array(width).fill(false);
 
-    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let data = imgData.data;
-    let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
-
-    // Find non-white pixels (simple bounding box for entire drawing)
-    for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-            let i = (y * canvas.width + x) * 4;
+    // Check each column for any dark pixel
+    for (let x = 0; x < width; x++) {
+        for (let y = 0; y < height; y++) {
+            let i = (y * width + x) * 4;
             if (data[i] < 250 || data[i+1] < 250 || data[i+2] < 250) {
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
+                columns[x] = true;
+                break;
             }
         }
     }
 
-    if (maxX <= minX || maxY <= minY) {
-        document.getElementById('result').innerText = "Please write an answer!";
-        return;
+    let boxes = [];
+    let inDigit = false;
+    let start = 0;
+    for (let x = 0; x < width; x++) {
+        if (columns[x] && !inDigit) { inDigit = true; start = x; }
+        if (!columns[x] && inDigit) { inDigit = false; boxes.push([start, x]); }
     }
+    if (inDigit) boxes.push([start, width-1]);
+    return boxes;
+}
 
-    // Extract bounding box
-    let width = maxX - minX + 1;
-    let height = maxY - minY + 1;
+// Preprocess digit canvas for MNIST
+function preprocessDigit(xStart, xEnd, imgData) {
+    let digitWidth = xEnd - xStart + 1;
     let digitCanvas = document.createElement('canvas');
     digitCanvas.width = 28;
     digitCanvas.height = 28;
     let digitCtx = digitCanvas.getContext('2d');
-    digitCtx.drawImage(canvas, minX, minY, width, height, 0, 0, 28, 28);
-
-    // Convert to tensor
+    digitCtx.drawImage(canvas, xStart, 0, digitWidth, canvas.height, 0, 0, 28, 28);
     let tensor = tf.browser.fromPixels(digitCanvas,1)
         .mean(2)
         .expandDims(0)
         .expandDims(-1)
         .toFloat()
         .div(tf.scalar(255));
+    return tensor;
+}
 
-    let prediction = model.predict(tensor);
-    let predictedDigit = prediction.argMax(-1).dataSync()[0];
+// Check answer
+async function checkAnswer() {
+    if (!model) return alert("Model not loaded yet!");
+    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let boxes = getDigitBoxes(imgData);
+    if (boxes.length === 0) {
+        document.getElementById('result').innerText = "Please write an answer!";
+        return;
+    }
 
-    // For demonstration, treat whole drawing as single number
-    let userAnswer = predictedDigit;
+    let predictedNumber = '';
+    for (let [start, end] of boxes) {
+        let tensor = preprocessDigit(start, end, imgData);
+        let prediction = model.predict(tensor);
+        let digit = prediction.argMax(-1).dataSync()[0];
+        predictedNumber += digit.toString();
+    }
 
-    if (userAnswer === answer) {
+    if (parseInt(predictedNumber) === answer) {
         document.getElementById('result').innerText = "Correct! 🎉";
     } else {
-        document.getElementById('result').innerText = `Oops! The correct answer was ${answer}.`;
+        document.getElementById('result').innerText = `Oops! You wrote ${predictedNumber}. Correct answer: ${answer}.`;
     }
 
     generateQuestion();
