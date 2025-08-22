@@ -9,53 +9,58 @@
   select, input, button { font-size: 16px; padding: 5px; margin: 5px; }
   #feedback { font-size: 24px; font-weight: bold; margin-top: 20px; color: green; }
   #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 20px; color: red; }
+  #gameScreen { display: none; }
 </style>
 </head>
 <body>
 
 <h1>Math Game</h1>
 
-<label for="mode">Choose mode: </label>
-<select id="mode">
-    <option value="addition">Addition only</option>
-    <option value="subtraction">Subtraction only</option>
-    <option value="mixed">Mixed</option>
-</select>
-<br>
+<!-- Start Screen -->
+<div id="startScreen">
+  <label for="mode">Choose mode: </label>
+  <select id="mode">
+      <option value="addition">Addition only</option>
+      <option value="subtraction">Subtraction only</option>
+      <option value="mixed">Mixed</option>
+  </select>
+  <br>
 
-<label for="maxNumber">Choose max number for each number: </label>
-<input type="number" id="maxNumber" value="20" min="1">
-<br>
+  <label for="maxNumber">Choose max number for each number: </label>
+  <input type="number" id="maxNumber" value="20" min="1">
+  <br>
 
-<button id="startBtn">Start Game</button>
+  <button id="startBtn">Start Game</button>
+</div>
 
-<div id="question" style="margin-top: 20px; font-size: 20px;"></div>
-<input type="text" id="answerInput" placeholder="Your answer" style="display:none;">
-<br>
-<button id="submitBtn" style="display:none;">Submit</button>
+<!-- Game Screen -->
+<div id="gameScreen">
+  <div id="question" style="margin-top: 20px; font-size: 20px;"></div>
+  <input type="text" id="answerInput" placeholder="Your answer">
+  <br>
+  <button id="submitBtn">Submit</button>
 
-<div id="feedback"></div>
-<div id="wrongFeedback"></div>
-<div id="score">Score: 0</div>
+  <div id="feedback"></div>
+  <div id="wrongFeedback"></div>
+  <div id="score">Score: 0</div>
+</div>
 
 <script>
 let answer = 0;
 let score = 0;
+let currentMode = 'addition';
+let max = 20;
 
 // Generate a new math problem
 function generateQuestion() {
-    const mode = document.getElementById('mode').value;
-    let max = parseInt(document.getElementById('maxNumber').value);
-    if (isNaN(max) || max < 1) max = 20;
-
     let a = Math.floor(Math.random() * max) + 1;
     let b = Math.floor(Math.random() * max) + 1;
     let operation = '+';
 
-    if (mode === 'addition') {
+    if (currentMode === 'addition') {
         operation = '+';
         answer = a + b;
-    } else if (mode === 'subtraction') {
+    } else if (currentMode === 'subtraction') {
         if (a < b) [a, b] = [b, a];
         operation = '-';
         answer = a - b;
@@ -103,9 +108,13 @@ function checkAnswer() {
 
 // Start game after choosing mode and max number
 document.getElementById('startBtn').addEventListener('click', () => {
-    document.getElementById('startBtn').style.display = 'none';
-    document.getElementById('answerInput').style.display = '';
-    document.getElementById('submitBtn').style.display = '';
+    currentMode = document.getElementById('mode').value;
+    let inputMax = parseInt(document.getElementById('maxNumber').value);
+    max = isNaN(inputMax) || inputMax < 1 ? 20 : inputMax;
+
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = '';
+
     generateQuestion();
 });
 
@@ -114,8 +123,6 @@ document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
 });
-document.getElementById('mode').addEventListener('change', generateQuestion);
-document.getElementById('maxNumber').addEventListener('change', generateQuestion);
 </script>
 
 </body>
