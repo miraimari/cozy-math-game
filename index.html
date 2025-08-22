@@ -190,7 +190,7 @@ function checkAnswer() {
     scoreEl.innerText = `Score: ${score}`;
     feedbackEl.innerText = `✅ Correct, ${playerName}!`;
     wrongFeedbackEl.innerText = '';
-    setTimeout(generateQuestion, 3000); // 3-second delay
+    setTimeout(generateQuestion, 2000); // 2-second delay
   } else {
     wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
     feedbackEl.innerText = '';
@@ -202,3 +202,4 @@ function checkAnswer() {
 
 </body>
 </html>
+
