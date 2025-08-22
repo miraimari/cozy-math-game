@@ -33,21 +33,27 @@
   #feedback { color: green; }
   #wrongFeedback { color: red; }
 
-  #score, #streakDisplay, #streakMessage {
+  #score {
     font-size: 18px;
     margin-top: 10px;
+  }
+
+  #streakInfo {
+    font-size: 18px;
+    margin-top: 10px;
+    font-weight: bold;
   }
 
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
+    gap: 2px; /* decreased gap for bigger buttons */
     justify-items: center;
     margin-top: 10px;
   }
 
   #keypad button {
-    width: 80px;
+    width: 70px;
     height: 60px;
     font-size: 22px;
     border-radius: 8px;
@@ -64,7 +70,7 @@
   @media (max-width: 400px) {
     #question { font-size: 20px; }
     #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 70px; height: 55px; font-size: 20px; }
+    #keypad button { width: 60px; height: 55px; font-size: 20px; }
   }
 </style>
 </head>
@@ -80,8 +86,7 @@
     <option value="mixed">Mixed</option>
   </select><br>
   <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
-  <div id="streakMessage"></div>
-  <div id="streakDisplay"></div>
+  <div id="streakInfo"></div>
   <button id="startBtn">Start Game</button>
 </div>
 
@@ -116,7 +121,7 @@ let mode = 'addition';
 let maxNumber = 20;
 let score = 0;
 let answer = 0;
-let streak = 0;
+let streak = Number(localStorage.getItem('streak')) || 0;
 
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
@@ -125,23 +130,10 @@ const feedbackEl = document.getElementById('feedback');
 const wrongFeedbackEl = document.getElementById('wrongFeedback');
 const scoreEl = document.getElementById('score');
 const answerInput = document.getElementById('answerInput');
-const streakDisplay = document.getElementById('streakDisplay');
-const streakMessage = document.getElementById('streakMessage');
+const streakInfo = document.getElementById('streakInfo');
 
-// Load streak info from localStorage
-let savedStreak = Number(localStorage.getItem('streak')) || 0;
-let lastDate = localStorage.getItem('lastDate') || '';
-const today = new Date().toISOString().split('T')[0];
-
-if (lastDate !== today) {
-  if (savedStreak > 0 && lastDate !== '') {
-    streakMessage.innerText = "😢 You missed a day, streak reset!";
-  }
-  streak = 0;
-} else {
-  streak = savedStreak;
-}
-streakDisplay.innerText = `Current Streak: ${streak}`;
+// Show streak info on load
+updateStreakInfo();
 
 document.getElementById('startBtn').addEventListener('click', () => {
   const nameInput = document.getElementById('playerName').value.trim();
@@ -164,6 +156,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 document.getElementById('backBtn').addEventListener('click', () => {
   gameScreen.style.display = 'none';
   startScreen.style.display = 'block';
+  updateStreakInfo();
 });
 
 document.querySelectorAll('.numBtn').forEach(btn => {
@@ -210,20 +203,47 @@ function checkAnswer() {
     scoreEl.innerText = `Score: ${score}`;
     wrongFeedbackEl.innerText = '';
 
-    // Update streak only after correct answer
-    streak++;
-    streakDisplay.innerText = `Current Streak: ${streak}`;
-    localStorage.setItem('streak', streak);
-    localStorage.setItem('lastDate', today);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const lastStreakDate = localStorage.getItem('lastStreakDate');
 
-    feedbackEl.innerText = `🎉 Great job, ${playerName}! Your streak is now ${streak} day${streak>1?'s':''}!`;
+    if (lastStreakDate !== todayStr) {
+      streak++;
+      localStorage.setItem('streak', streak);
+      localStorage.setItem('lastStreakDate', todayStr);
+      streakInfo.innerText = `🎉 Awesome, ${playerName}! Your streak is now ${streak} day${streak>1?'s':''}!`;
+    } else {
+      feedbackEl.innerText = `✅ Correct, ${playerName}!`;
+    }
 
+    localStorage.setItem('lastDate', todayStr); // track last played date
     setTimeout(generateQuestion, 2000); // 2-second delay
   } else {
     wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
     feedbackEl.innerText = '';
     answerInput.value = '';
     answerInput.focus();
+  }
+}
+
+function updateStreakInfo() {
+  const lastDateStr = localStorage.getItem('lastDate');
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  if (lastDateStr) {
+    const lastDate = new Date(lastDateStr);
+    const diffTime = today - lastDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      streak = 0;
+      localStorage.setItem('streak', streak);
+      streakInfo.innerText = `😢 Your streak was broken! Start fresh today.`;
+    } else {
+      streakInfo.innerText = `Your current streak: ${streak} day${streak>1?'s':''}`;
+    }
+  } else {
+    streakInfo.innerText = `Welcome! Your current streak: ${streak}`;
   }
 }
 </script>
