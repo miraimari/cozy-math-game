@@ -38,17 +38,17 @@
     #keypad {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 3px; /* 🔹 Smaller gap */
+      gap: 10px; /* reverted spacing */
       justify-items: center;
       margin-top: 10px;
-      max-width: 240px;
+      max-width: 300px;
       margin-left: auto;
       margin-right: auto;
     }
     #keypad button {
-      width: 70px;
-      height: 60px;
-      font-size: 20px;
+      width: 80px;
+      height: 70px;
+      font-size: 24px;
       border-radius: 8px;
       cursor: pointer;
     }
@@ -108,13 +108,9 @@
     let score = 0;
 
     // 🔥 Streak variables
-    let streak = 0;
+    let streak = parseInt(localStorage.getItem('streak') || "0", 10);
     let lastStreakDate = localStorage.getItem('lastStreakDate') || null;
-    if (localStorage.getItem('streak')) {
-      streak = parseInt(localStorage.getItem('streak'), 10);
-    }
 
-    // format date as YYYY-MM-DD
     function formatDate(date) {
       return date.toISOString().split('T')[0];
     }
@@ -133,7 +129,6 @@
 
       generateKeypad();
       generateQuestion();
-
       updateStreakDisplay();
     }
 
@@ -245,8 +240,7 @@
 
       if (lastStreakDate && lastStreakDate !== todayStr && lastStreakDate !== yesterdayStr) {
         streakMessage.innerText = `😢 Oh no, ${playerName || "Player"}! You lost your streak. Start again today!`;
-        streak = 0;
-        localStorage.setItem('streak', streak);
+        // do NOT reset streak immediately, only reset when they answer correctly again
       } else {
         streakMessage.innerText = "";
       }
