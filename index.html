@@ -1,80 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Math Game</title>
-<style>
-  body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-  select, input, button { font-size: 16px; padding: 5px; margin: 5px; }
-  #feedback { font-size: 24px; font-weight: bold; margin-top: 20px; color: green; }
-  #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 20px; color: red; }
-  #gameScreen { display: none; }
-</style>
-</head>
-<body>
+body { 
+    font-family: Arial, sans-serif; 
+    text-align: center; 
+    margin: 20px; 
+    font-size: 24px; /* bigger base font */
+}
 
-<h1>Math Game</h1>
+input, select, button { 
+    font-size: 24px; /* bigger inputs and buttons */
+    padding: 10px; 
+    margin: 10px; 
+}
 
-<!-- Start Screen -->
-<div id="startScreen">
-  <label for="playerName">Enter your name: </label>
-  <input type="text" id="playerName" placeholder="Your name">
-  <br>
+#question { 
+    font-size: 36px; 
+    margin-top: 30px; 
+}
 
-  <label for="mode">Choose mode: </label>
-  <select id="mode">
-      <option value="addition">Addition only</option>
-      <option value="subtraction">Subtraction only</option>
-      <option value="mixed">Mixed</option>
-  </select>
-  <br>
+#feedback { 
+    font-size: 32px; 
+    font-weight: bold; 
+    margin-top: 20px; 
+    color: green; 
+}
 
-  <label for="maxNumber">Choose max number for each number: </label>
-  <input type="number" id="maxNumber" value="20" min="1">
-  <br>
+#wrongFeedback { 
+    font-size: 28px; 
+    font-weight: bold; 
+    margin-top: 20px; 
+    color: red; 
+}
 
-  <button id="startBtn">Start Game</button>
-</div>
-
-<!-- Game Screen -->
-<div id="gameScreen">
-  <div id="question" style="margin-top: 20px; font-size: 20px;"></div>
-  <input type="text" id="answerInput" placeholder="Your answer">
-  <br>
-  <button id="submitBtn">Submit</button>
-  <button id="backBtn">Back to Settings</button>
-
-  <div id="feedback"></div>
-  <div id="wrongFeedback"></div>
-  <div id="score">Score: 0</div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    let answer = 0;
-    let score = 0;
-    let currentMode = 'addition';
-    let max = 20;
-    let playerName = '';
-
-    function generateQuestion() {
-        if (max < 1) max = 20;
-
-        let a = Math.floor(Math.random() * max) + 1;
-        let b = Math.floor(Math.random() * max) + 1;
-        let operation = '+';
-
-        if (currentMode === 'addition') {
-            operation = '+';
-            answer = a + b;
-        } else if (currentMode === 'subtraction') {
-            if (a < b) [a, b] = [b, a];
-            operation = '-';
-            answer = a - b;
-        } else { // mixed
-            if (Math.random() < 0.5) { // addition
-                operation = '+';
-                answer = a + b;
-            } else { // subtraction
-                if (a < b) [a, b] =
+#score { 
+    font-size: 28px; 
+    margin-top: 20px; 
+}
