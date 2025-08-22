@@ -3,165 +3,177 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Math Game</title>
+<title>Cozy Math Game</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  text-align: center;
-  margin: 0;
-  padding: 0;
-}
-
-.screen {
-  display: none;
-  padding: 5vw;
-}
-
-#startScreen, #gameScreen {
-  display: block;
-}
-
-#questionText {
-  font-size: 6vw;
-  margin-bottom: 5vw;
-}
-
-#answerInput {
-  font-size: 6vw;
-  width: 50vw;
-  height: 12vw;
-  text-align: center;
-  margin-bottom: 5vw;
-}
-
-#keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3vw;
-  justify-items: center;
-  margin-top: 2vw;
-}
-
-#keypad button {
-  width: 20vw;
-  height: 14vw;
-  font-size: 6vw;
-  border-radius: 1vw;
-  cursor: pointer;
-}
-
-#feedback {
-  margin-top: 4vw;
-  font-size: 5vw;
-  min-height: 6vw;
-}
-
-input[type="text"], input[type="number"], select {
-  font-size: 5vw;
-  padding: 2vw;
-  margin: 2vw 0;
-}
-
-button {
-  font-size: 5vw;
-  padding: 2vw 4vw;
-  margin: 2vw 0;
-  border-radius: 1vw;
-}
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  .screen {
+    display: none;
+    padding: 20px;
+  }
+  #startScreen, #gameScreen {
+    display: block;
+  }
+  #keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    justify-items: center;
+    margin-top: 10px;
+  }
+  #keypad button {
+    width: 60px;
+    height: 50px;
+    font-size: 20px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  #feedback {
+    margin-top: 15px;
+    font-size: 20px;
+    min-height: 24px;
+  }
+  #answerInput {
+    font-size: 28px;
+    width: 120px;
+    text-align: center;
+    height: 50px;
+    margin-top: 10px;
+  }
+  input[type="text"], input[type="number"], select {
+    font-size: 18px;
+    padding: 5px;
+    margin: 5px 0;
+  }
 </style>
 </head>
 <body>
 
-<!-- Start Screen -->
 <div id="startScreen" class="screen">
-  <h1>Math Game</h1>
-  <input type="text" id="playerName" placeholder="Enter your name">
-  <br>
-  <label for="modeSelect">Select mode:</label>
-  <select id="modeSelect">
-    <option value="addition">Addition</option>
-    <option value="subtraction">Subtraction</option>
-    <option value="mixed">Mixed</option>
-  </select>
-  <br>
-  <label for="maxNumber">Max number:</label>
-  <input type="number" id="maxNumber" min="1" max="20" value="10">
-  <br>
-  <button onclick="startGame()">Start Game</button>
+  <h2>Welcome to the Cozy Math Game!</h2>
+  <label>Enter your name: <input type="text" id="playerName" placeholder="Your name"></label><br><br>
+  <label>Select mode:
+    <select id="modeSelect">
+      <option value="addition">Addition</option>
+      <option value="subtraction">Subtraction</option>
+      <option value="mixed">Mixed</option>
+    </select>
+  </label><br><br>
+  <label>Max number: <input type="number" id="maxNumber" value="20" min="1" max="99"></label><br><br>
+  <button id="startBtn">Start Game</button>
 </div>
 
-<!-- Game Screen -->
 <div id="gameScreen" class="screen">
-  <div id="questionText"></div>
+  <h2 id="questionText"></h2>
   <input type="text" id="answerInput" readonly>
+  
   <div id="keypad">
-    <button onclick="appendNumber('1')">1</button>
-    <button onclick="appendNumber('2')">2</button>
-    <button onclick="appendNumber('3')">3</button>
-    <button onclick="appendNumber('4')">4</button>
-    <button onclick="appendNumber('5')">5</button>
-    <button onclick="appendNumber('6')">6</button>
-    <button onclick="appendNumber('7')">7</button>
-    <button onclick="appendNumber('8')">8</button>
-    <button onclick="appendNumber('9')">9</button>
-    <button onclick="clearInput()">Clear</button>
-    <button onclick="appendNumber('0')">0</button>
-    <button onclick="submitAnswer()">Submit</button>
+    <div>
+      <button class="numBtn">1</button>
+      <button class="numBtn">2</button>
+      <button class="numBtn">3</button>
+    </div>
+    <div>
+      <button class="numBtn">4</button>
+      <button class="numBtn">5</button>
+      <button class="numBtn">6</button>
+    </div>
+    <div>
+      <button class="numBtn">7</button>
+      <button class="numBtn">8</button>
+      <button class="numBtn">9</button>
+    </div>
+    <div>
+      <button id="clearBtn">Clear</button>
+      <button class="numBtn">0</button>
+      <button id="submitBtn">Submit</button>
+    </div>
   </div>
-  <div id="feedback"></div>
-  <button onclick="backToSettings()">Back to Settings</button>
+
+  <div id="feedback"></div><br>
+  <button id="backBtn">Back to Settings</button>
 </div>
 
 <script>
+const startScreen = document.getElementById('startScreen');
+const gameScreen = document.getElementById('gameScreen');
+const startBtn = document.getElementById('startBtn');
+const backBtn = document.getElementById('backBtn');
+const playerNameInput = document.getElementById('playerName');
+const modeSelect = document.getElementById('modeSelect');
+const maxNumberInput = document.getElementById('maxNumber');
+const questionText = document.getElementById('questionText');
+const answerInput = document.getElementById('answerInput');
+const feedback = document.getElementById('feedback');
+const numButtons = document.querySelectorAll('.numBtn');
+const clearBtn = document.getElementById('clearBtn');
+const submitBtn = document.getElementById('submitBtn');
+
 let playerName = '';
 let mode = 'addition';
-let maxNumber = 10;
+let maxNumber = 20;
 let currentAnswer = 0;
 
-function startGame() {
-  playerName = document.getElementById('playerName').value || 'Player';
-  mode = document.getElementById('modeSelect').value;
-  maxNumber = parseInt(document.getElementById('maxNumber').value);
-  document.getElementById('startScreen').style.display = 'none';
-  document.getElementById('gameScreen').style.display = 'block';
-  generateQuestion();
-}
-
-function backToSettings() {
-  document.getElementById('gameScreen').style.display = 'none';
-  document.getElementById('startScreen').style.display = 'block';
-  document.getElementById('answerInput').value = '';
-  document.getElementById('feedback').textContent = '';
-}
-
 function generateQuestion() {
+  answerInput.value = '';
+  feedback.textContent = '';
+  
   let num1 = Math.floor(Math.random() * (maxNumber + 1));
   let num2 = Math.floor(Math.random() * (maxNumber + 1));
-  let op = mode;
+  let operation = mode;
 
   if (mode === 'mixed') {
-    op = Math.random() < 0.5 ? 'addition' : 'subtraction';
+    operation = Math.random() < 0.5 ? 'addition' : 'subtraction';
   }
 
-  if (op === 'subtraction' && num2 > num1) {
-    [num1, num2] = [num2, num1];
+  if (operation === 'subtraction' && num1 < num2) {
+    [num1, num2] = [num2, num1]; // ensure non-negative
   }
 
-  currentAnswer = op === 'addition' ? num1 + num2 : num1 - num2;
-  document.getElementById('questionText').textContent = `${num1} ${op === 'addition' ? '+' : '-'} ${num2} = ?`;
-  document.getElementById('answerInput').value = '';
-  document.getElementById('feedback').textContent = '';
+  currentAnswer = operation === 'addition' ? num1 + num2 : num1 - num2;
+  questionText.textContent = `${num1} ${operation === 'addition' ? '+' : '-'} ${num2} = ?`;
 }
 
-function appendNumber(num) {
-  document.getElementById('answerInput').value += num;
+function checkAnswer() {
+  if (parseInt(answerInput.value) === currentAnswer) {
+    feedback.textContent = `Correct, ${playerName}! 🎉`;
+    setTimeout(generateQuestion, 2000);
+  } else {
+    feedback.textContent = `Try again, ${playerName}!`;
+  }
 }
 
-function clearInput() {
-  document.getElementById('answerInput').value = '';
-}
+startBtn.addEventListener('click', () => {
+  playerName = playerNameInput.value || 'Player';
+  mode = modeSelect.value;
+  maxNumber = parseInt(maxNumberInput.value) || 20;
 
-function submitAnswer() {
-  const answer = parseInt(document.getElementById('answerInput').value);
-  if (answer === currentAnswer) {
-    docu
+  startScreen.style.display = 'none';
+  gameScreen.style.display = 'block';
+  generateQuestion();
+});
+
+backBtn.addEventListener('click', () => {
+  gameScreen.style.display = 'none';
+  startScreen.style.display = 'block';
+});
+
+numButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    answerInput.value += btn.textContent;
+  });
+});
+
+clearBtn.addEventListener('click', () => {
+  answerInput.value = '';
+});
+
+submitBtn.addEventListener('click', checkAnswer);
+</script>
+
+</body>
+</html>
