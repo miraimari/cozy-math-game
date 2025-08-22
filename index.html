@@ -3,39 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Handwriting Math Game</title>
+<title>Simple Math Game</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-  canvas { border: 2px solid black; margin-top: 10px; background: #f9f9f9; touch-action: none; }
+  input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
   button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
   #result { font-size: 18px; margin-top: 10px; }
 </style>
 </head>
 <body>
 
-<h1>Handwriting Math Game</h1>
+<h1>Math Game</h1>
 <div id="question"></div>
-<canvas id="canvas" width="300" height="150"></canvas>
+<input type="text" id="answerInput" placeholder="Your answer">
 <br>
-<button id="clearBtn">Clear</button>
 <button id="submitBtn">Submit</button>
 <div id="result"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.0.0/dist/tf.min.js"></script>
 <script>
-let canvas = document.getElementById('canvas');
-let ctx = canvas.getContext('2d');
-let drawing = false;
 let answer = 0;
-let model;
 
-// Load MNIST model
-async function loadModel() {
-    model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json');
-    generateQuestion();
-}
-
-// Generate arithmetic problem
 function generateQuestion() {
     let a = Math.floor(Math.random() * 50) + 1;
     let b = Math.floor(Math.random() * 50) + 1;
@@ -50,116 +37,22 @@ function generateQuestion() {
 
     document.getElementById('question').innerText = `What is ${a} ${op} ${b}?`;
     document.getElementById('result').innerText = '';
-    clearCanvas();
+    document.getElementById('answerInput').value = '';
 }
 
-// Canvas drawing
-function startDrawing(e) { drawing = true; draw(e); }
-function stopDrawing() { drawing = false; ctx.beginPath(); }
-function draw(e) {
-    if (!drawing) return;
-    e.preventDefault();
-    let rect = canvas.getBoundingClientRect();
-    let x = (e.clientX || e.touches[0].clientX) - rect.left;
-    let y = (e.clientY || e.touches[0].clientY) - rect.top;
-    ctx.lineWidth = 8;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = 'black';
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-}
-
-function clearCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.beginPath();
-}
-
-// Split canvas into digit boxes
-function getDigitBoxes(imageData) {
-    let width = imageData.width;
-    let height = imageData.height;
-    let data = imageData.data;
-    let columns = new Array(width).fill(false);
-
-    for (let x = 0; x < width; x++) {
-        for (let y = 0; y < height; y++) {
-            let i = (y * width + x) * 4;
-            if (data[i] < 250 || data[i+1] < 250 || data[i+2] < 250) {
-                columns[x] = true;
-                break;
-            }
-        }
-    }
-
-    let boxes = [];
-    let inDigit = false;
-    let start = 0;
-    for (let x = 0; x < width; x++) {
-        if (columns[x] && !inDigit) { inDigit = true; start = x; }
-        if (!columns[x] && inDigit) { inDigit = false; boxes.push([start, x]); }
-    }
-    if (inDigit) boxes.push([start, width-1]);
-    return boxes;
-}
-
-// Preprocess digit for MNIST
-function preprocessDigit(xStart, xEnd) {
-    let digitWidth = xEnd - xStart + 1;
-    let digitCanvas = document.createElement('canvas');
-    digitCanvas.width = 28;
-    digitCanvas.height = 28;
-    let digitCtx = digitCanvas.getContext('2d');
-    digitCtx.drawImage(canvas, xStart, 0, digitWidth, canvas.height, 0, 0, 28, 28);
-    return tf.browser.fromPixels(digitCanvas,1)
-             .mean(2)
-             .expandDims(0)
-             .expandDims(-1)
-             .toFloat()
-             .div(tf.scalar(255));
-}
-
-// Check answer
-async function checkAnswer() {
-    if (!model) return alert("Model not loaded yet!");
-    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let boxes = getDigitBoxes(imgData);
-    if (boxes.length === 0) {
-        document.getElementById('result').innerText = "Please write an answer!";
-        return;
-    }
-
-    let predictedNumber = '';
-    for (let [start, end] of boxes) {
-        let tensor = preprocessDigit(start, end);
-        let prediction = model.predict(tensor);
-        let digit = prediction.argMax(-1).dataSync()[0];
-        predictedNumber += digit.toString();
-    }
-
-    if (parseInt(predictedNumber) === answer) {
+function checkAnswer() {
+    let userAnswer = parseInt(document.getElementById('answerInput').value);
+    if (userAnswer === answer) {
         document.getElementById('result').innerText = "Correct! 🎉";
     } else {
-        document.getElementById('result').innerText = `Oops! You wrote ${predictedNumber}. Correct answer: ${answer}.`;
+        document.getElementById('result').innerText = `Oops! Correct answer: ${answer}`;
     }
-
     generateQuestion();
 }
 
-// Event listeners
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseleave', stopDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('touchstart', startDrawing);
-canvas.addEventListener('touchend', stopDrawing);
-canvas.addEventListener('touchmove', draw);
-document.getElementById('clearBtn').addEventListener('click', clearCanvas);
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 
-// Start
-loadModel();
+generateQuestion();
 </script>
 
 </body>
