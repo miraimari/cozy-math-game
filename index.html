@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Multi-Digit Handwriting Math Game</title>
+<title>Handwriting Math Game</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
   canvas { border: 2px solid black; margin-top: 10px; background: #f9f9f9; touch-action: none; }
@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h1>Multi-Digit Handwriting Math Game</h1>
+<h1>Handwriting Math Game</h1>
 <div id="question"></div>
 <canvas id="canvas" width="300" height="150"></canvas>
 <br>
@@ -35,7 +35,7 @@ async function loadModel() {
     generateQuestion();
 }
 
-// Generate random arithmetic problem
+// Generate arithmetic problem
 function generateQuestion() {
     let a = Math.floor(Math.random() * 50) + 1;
     let b = Math.floor(Math.random() * 50) + 1;
@@ -83,7 +83,6 @@ function getDigitBoxes(imageData) {
     let data = imageData.data;
     let columns = new Array(width).fill(false);
 
-    // Check each column for any dark pixel
     for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
             let i = (y * width + x) * 4;
@@ -105,21 +104,20 @@ function getDigitBoxes(imageData) {
     return boxes;
 }
 
-// Preprocess digit canvas for MNIST
-function preprocessDigit(xStart, xEnd, imgData) {
+// Preprocess digit for MNIST
+function preprocessDigit(xStart, xEnd) {
     let digitWidth = xEnd - xStart + 1;
     let digitCanvas = document.createElement('canvas');
     digitCanvas.width = 28;
     digitCanvas.height = 28;
     let digitCtx = digitCanvas.getContext('2d');
     digitCtx.drawImage(canvas, xStart, 0, digitWidth, canvas.height, 0, 0, 28, 28);
-    let tensor = tf.browser.fromPixels(digitCanvas,1)
-        .mean(2)
-        .expandDims(0)
-        .expandDims(-1)
-        .toFloat()
-        .div(tf.scalar(255));
-    return tensor;
+    return tf.browser.fromPixels(digitCanvas,1)
+             .mean(2)
+             .expandDims(0)
+             .expandDims(-1)
+             .toFloat()
+             .div(tf.scalar(255));
 }
 
 // Check answer
@@ -134,7 +132,7 @@ async function checkAnswer() {
 
     let predictedNumber = '';
     for (let [start, end] of boxes) {
-        let tensor = preprocessDigit(start, end, imgData);
+        let tensor = preprocessDigit(start, end);
         let prediction = model.predict(tensor);
         let digit = prediction.argMax(-1).dataSync()[0];
         predictedNumber += digit.toString();
@@ -160,7 +158,7 @@ canvas.addEventListener('touchmove', draw);
 document.getElementById('clearBtn').addEventListener('click', clearCanvas);
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 
-// Load model and start game
+// Start
 loadModel();
 </script>
 
