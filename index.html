@@ -41,16 +41,16 @@
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.3px;  /* very small spacing */
-    justify-items: center;
+    gap: 1px; /* smaller gap */
+    justify-items: stretch;
     margin-top: 8px;
     margin-bottom: 8px;
   }
 
   #keypad button {
-    width: 75px;   /* bigger buttons */
-    height: 60px;
-    font-size: 22px;
+    width: 100%;       /* fill the cell */
+    height: 70px;      /* taller buttons */
+    font-size: 24px;   /* bigger text */
     border-radius: 8px;
     cursor: pointer;
   }
@@ -64,8 +64,8 @@
 
   @media (max-width: 400px) {
     #question { font-size: 20px; }
-    #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 65px; height: 50px; font-size: 20px; }
+    #answerInput { font-size: 18px; width: 90%; }
+    #keypad button { height: 60px; font-size: 22px; }
   }
 </style>
 </head>
