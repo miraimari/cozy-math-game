@@ -21,16 +21,18 @@
     <option value="subtraction">Subtraction only</option>
     <option value="mixed">Mixed</option>
 </select>
-
 <br>
 
-<label for="maxNumber">Max number: </label>
+<label for="maxNumber">Choose max number for each number: </label>
 <input type="number" id="maxNumber" value="20" min="1">
+<br>
+
+<button id="startBtn">Start Game</button>
 
 <div id="question" style="margin-top: 20px; font-size: 20px;"></div>
-<input type="text" id="answerInput" placeholder="Your answer">
+<input type="text" id="answerInput" placeholder="Your answer" style="display:none;">
 <br>
-<button id="submitBtn">Submit</button>
+<button id="submitBtn" style="display:none;">Submit</button>
 
 <div id="feedback"></div>
 <div id="wrongFeedback"></div>
@@ -46,15 +48,15 @@ function generateQuestion() {
     let max = parseInt(document.getElementById('maxNumber').value);
     if (isNaN(max) || max < 1) max = 20;
 
-    let a = Math.floor(Math.random() * max) + 1; 
-    let b = Math.floor(Math.random() * max) + 1; 
+    let a = Math.floor(Math.random() * max) + 1;
+    let b = Math.floor(Math.random() * max) + 1;
     let operation = '+';
 
     if (mode === 'addition') {
         operation = '+';
         answer = a + b;
     } else if (mode === 'subtraction') {
-        if (a < b) [a, b] = [b, a]; 
+        if (a < b) [a, b] = [b, a];
         operation = '-';
         answer = a - b;
     } else { // mixed
@@ -89,6 +91,7 @@ function checkAnswer() {
         score++;
         document.getElementById('feedback').innerText = "✅ Correct!";
         document.getElementById('wrongFeedback').innerText = '';
+        document.getElementById('score').innerText = `Score: ${score}`;
         setTimeout(generateQuestion, 1000);
     } else {
         document.getElementById('wrongFeedback').innerText = "❌ Wrong! Try again.";
@@ -96,9 +99,15 @@ function checkAnswer() {
         document.getElementById('answerInput').value = '';
         document.getElementById('answerInput').focus();
     }
-
-    document.getElementById('score').innerText = `Score: ${score}`;
 }
+
+// Start game after choosing mode and max number
+document.getElementById('startBtn').addEventListener('click', () => {
+    document.getElementById('startBtn').style.display = 'none';
+    document.getElementById('answerInput').style.display = '';
+    document.getElementById('submitBtn').style.display = '';
+    generateQuestion();
+});
 
 // Event listeners
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
@@ -107,9 +116,6 @@ document.getElementById('answerInput').addEventListener('keydown', function(e){
 });
 document.getElementById('mode').addEventListener('change', generateQuestion);
 document.getElementById('maxNumber').addEventListener('change', generateQuestion);
-
-// Start first question
-generateQuestion();
 </script>
 
 </body>
