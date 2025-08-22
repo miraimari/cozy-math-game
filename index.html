@@ -41,22 +41,22 @@
   #streakInfo {
     font-size: 18px;
     margin-top: 10px;
-    font-weight: bold;
+    color: darkblue;
   }
 
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px; /* decreased gap for bigger buttons */
+    gap: 2px; /* tighter spacing */
     justify-items: center;
     margin-top: 10px;
   }
 
   #keypad button {
-    width: 70px;
-    height: 60px;
+    width: 90px;
+    height: 70px;
     font-size: 22px;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
   }
 
@@ -70,7 +70,7 @@
   @media (max-width: 400px) {
     #question { font-size: 20px; }
     #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 60px; height: 55px; font-size: 20px; }
+    #keypad button { width: 80px; height: 65px; font-size: 20px; }
   }
 </style>
 </head>
@@ -86,8 +86,9 @@
     <option value="mixed">Mixed</option>
   </select><br>
   <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
-  <div id="streakInfo"></div>
   <button id="startBtn">Start Game</button>
+
+  <div id="streakInfo"></div>
 </div>
 
 <div id="gameScreen" style="display:none;">
@@ -121,7 +122,6 @@ let mode = 'addition';
 let maxNumber = 20;
 let score = 0;
 let answer = 0;
-let streak = Number(localStorage.getItem('streak')) || 0;
 
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
@@ -132,8 +132,34 @@ const scoreEl = document.getElementById('score');
 const answerInput = document.getElementById('answerInput');
 const streakInfo = document.getElementById('streakInfo');
 
-// Show streak info on load
-updateStreakInfo();
+// streak storage
+let streak = Number(localStorage.getItem('streak')) || 0;
+let lastStreakDate = localStorage.getItem('lastStreakDate') || null;
+let lastDate = localStorage.getItem('lastDate') || null;
+
+function formatDate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+function loadStreak() {
+  const todayStr = formatDate(new Date());
+
+  if (lastDate && lastDate !== todayStr) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = formatDate(yesterday);
+
+    if (lastDate !== yesterdayStr) {
+      streak = 0;
+      localStorage.setItem('streak', streak);
+      streakInfo.innerText = "😔 Oh no, you lost your streak! Let's start fresh today.";
+    }
+  }
+
+  streakInfo.innerText = `🔥 Current Streak: ${streak} day${streak !== 1 ? 's' : ''}`;
+  localStorage.setItem('lastDate', todayStr);
+}
+loadStreak();
 
 document.getElementById('startBtn').addEventListener('click', () => {
   const nameInput = document.getElementById('playerName').value.trim();
@@ -156,7 +182,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 document.getElementById('backBtn').addEventListener('click', () => {
   gameScreen.style.display = 'none';
   startScreen.style.display = 'block';
-  updateStreakInfo();
+  loadStreak();
 });
 
 document.querySelectorAll('.numBtn').forEach(btn => {
@@ -198,52 +224,30 @@ function checkAnswer() {
   const userAnswer = Number(input);
   if (input === '' || isNaN(userAnswer)) { alert("Please enter a number!"); return; }
 
+  const todayStr = formatDate(new Date());
+
   if (userAnswer === answer) {
     score++;
     scoreEl.innerText = `Score: ${score}`;
-    wrongFeedbackEl.innerText = '';
-
-    const todayStr = new Date().toISOString().split('T')[0];
-    const lastStreakDate = localStorage.getItem('lastStreakDate');
 
     if (lastStreakDate !== todayStr) {
       streak++;
       localStorage.setItem('streak', streak);
       localStorage.setItem('lastStreakDate', todayStr);
-      streakInfo.innerText = `🎉 Awesome, ${playerName}! Your streak is now ${streak} day${streak>1?'s':''}!`;
+      localStorage.setItem('lastDate', todayStr);
+
+      feedbackEl.innerText = `🎉 Awesome, ${playerName}, that is correct! Your streak is now ${streak} day${streak>1?'s':''}!`;
     } else {
       feedbackEl.innerText = `✅ Correct, ${playerName}!`;
     }
 
-    localStorage.setItem('lastDate', todayStr); // track last played date
+    wrongFeedbackEl.innerText = '';
     setTimeout(generateQuestion, 2000); // 2-second delay
   } else {
     wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
     feedbackEl.innerText = '';
     answerInput.value = '';
     answerInput.focus();
-  }
-}
-
-function updateStreakInfo() {
-  const lastDateStr = localStorage.getItem('lastDate');
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
-
-  if (lastDateStr) {
-    const lastDate = new Date(lastDateStr);
-    const diffTime = today - lastDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays > 1) {
-      streak = 0;
-      localStorage.setItem('streak', streak);
-      streakInfo.innerText = `😢 Your streak was broken! Start fresh today.`;
-    } else {
-      streakInfo.innerText = `Your current streak: ${streak} day${streak>1?'s':''}`;
-    }
-  } else {
-    streakInfo.innerText = `Welcome! Your current streak: ${streak}`;
   }
 }
 </script>
