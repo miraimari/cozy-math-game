@@ -27,8 +27,8 @@ let score = 0;
 
 // Generate a 1-digit addition problem
 function generateQuestion() {
-    let a = Math.floor(Math.random() * 9) + 1;
-    let b = Math.floor(Math.random() * 9) + 1;
+    const a = Math.floor(Math.random() * 9) + 1; // 1-9
+    const b = Math.floor(Math.random() * 9) + 1; // 1-9
     answer = a + b;
 
     document.getElementById('question').innerText = `What is ${a} + ${b}?`;
@@ -37,20 +37,23 @@ function generateQuestion() {
     document.getElementById('answerInput').focus();
 }
 
-// Check if the answer is correct
+// Check if the typed answer is correct
 function checkAnswer() {
-    let input = document.getElementById('answerInput').value.trim();
-    if (input === '') {
+    const input = document.getElementById('answerInput').value.trim();
+    const userAnswer = Number(input);
+
+    if (input === '' || isNaN(userAnswer)) {
         document.getElementById('result').innerText = "Please enter a number!";
         return;
     }
-    let userAnswer = Number(input);
+
     if (userAnswer === answer) {
         document.getElementById('result').innerText = "✅ Correct!";
         score++;
     } else {
         document.getElementById('result').innerText = `❌ Wrong! Correct answer: ${answer}`;
     }
+
     document.getElementById('score').innerText = `Score: ${score}`;
     generateQuestion();
 }
