@@ -8,7 +8,7 @@
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
   input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
   button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
-  #result { font-size: 18px; margin-top: 10px; }
+  #result { font-size: 20px; margin-top: 10px; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -27,8 +27,8 @@ let score = 0;
 
 // Generate a 1-digit addition problem
 function generateQuestion() {
-    let a = Math.floor(Math.random() * 9) + 1; // 1-9
-    let b = Math.floor(Math.random() * 9) + 1; // 1-9
+    let a = Math.floor(Math.random() * 9) + 1;
+    let b = Math.floor(Math.random() * 9) + 1;
     answer = a + b;
 
     document.getElementById('question').innerText = `What is ${a} + ${b}?`;
@@ -46,10 +46,10 @@ function checkAnswer() {
     }
     let userAnswer = Number(input);
     if (userAnswer === answer) {
-        document.getElementById('result').innerText = "Correct! 🎉";
+        document.getElementById('result').innerText = "✅ Correct!";
         score++;
     } else {
-        document.getElementById('result').innerText = `Oops! Correct answer: ${answer}`;
+        document.getElementById('result').innerText = `❌ Wrong! Correct answer: ${answer}`;
     }
     document.getElementById('score').innerText = `Score: ${score}`;
     generateQuestion();
