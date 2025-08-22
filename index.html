@@ -45,6 +45,11 @@
   <div id="score">Score: 0</div>
 </div>
 
+  <!-- Add this inside the #gameScreen div, below score -->
+<button id="backBtn">Back to Settings</button>
+
+  
+
 <script>
 let answer = 0;
 let score = 0;
@@ -123,7 +128,18 @@ document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
 });
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    // Hide game screen, show start screen
+    document.getElementById('gameScreen').style.display = 'none';
+    document.getElementById('startScreen').style.display = 'block';
+    
+    // Reset score
+    score = 0;
+    document.getElementById('score').innerText = `Score: ${score}`;
+});
 </script>
 
 </body>
 </html>
+
