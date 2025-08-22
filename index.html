@@ -1,3 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Game</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
+  select, input, button { font-size: 16px; padding: 5px; margin: 5px; }
+  #feedback { font-size: 24px; font-weight: bold; margin-top: 20px; color: green; }
+  #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 20px; color: red; }
+  #gameScreen { display: none; }
+</style>
+</head>
+<body>
+
+<h1>Math Game</h1>
+
 <!-- Start Screen -->
 <div id="startScreen">
   <label for="playerName">Enter your name: </label>
@@ -20,7 +38,7 @@
 </div>
 
 <!-- Game Screen -->
-<div id="gameScreen" style="display:none;">
+<div id="gameScreen">
   <div id="question" style="margin-top: 20px; font-size: 20px;"></div>
   <input type="text" id="answerInput" placeholder="Your answer">
   <br>
@@ -31,3 +49,32 @@
   <div id="wrongFeedback"></div>
   <div id="score">Score: 0</div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let answer = 0;
+    let score = 0;
+    let currentMode = 'addition';
+    let max = 20;
+    let playerName = '';
+
+    function generateQuestion() {
+        if (max < 1) max = 20;
+
+        let a = Math.floor(Math.random() * max) + 1;
+        let b = Math.floor(Math.random() * max) + 1;
+        let operation = '+';
+
+        if (currentMode === 'addition') {
+            operation = '+';
+            answer = a + b;
+        } else if (currentMode === 'subtraction') {
+            if (a < b) [a, b] = [b, a];
+            operation = '-';
+            answer = a - b;
+        } else { // mixed
+            if (Math.random() < 0.5) { // addition
+                operation = '+';
+                answer = a + b;
+            } else { // subtraction
+                if (a < b) [a, b] =
