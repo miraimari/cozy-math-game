@@ -6,8 +6,7 @@
 <title>Math Game</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
-  input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
-  button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+  select, input, button { font-size: 16px; padding: 5px; margin: 5px; }
   #feedback { font-size: 24px; font-weight: bold; margin-top: 20px; color: green; }
   #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 20px; color: red; }
 </style>
@@ -23,7 +22,7 @@
     <option value="mixed">Mixed</option>
 </select>
 
-<div id="question" style="margin-top: 20px;"></div>
+<div id="question" style="margin-top: 20px; font-size: 20px;"></div>
 <input type="text" id="answerInput" placeholder="Your answer">
 <br>
 <button id="submitBtn">Submit</button>
@@ -65,7 +64,6 @@ function generateQuestion() {
     document.getElementById('question').innerText = `What is ${a} ${operation} ${b}?`;
     document.getElementById('answerInput').value = '';
     document.getElementById('answerInput').focus();
-
     document.getElementById('feedback').innerText = '';
     document.getElementById('wrongFeedback').innerText = '';
 }
@@ -100,12 +98,10 @@ document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
 });
+document.getElementById('mode').addEventListener('change', generateQuestion);
 
 // Start first question
 generateQuestion();
-
-// Regenerate question if mode changes
-document.getElementById('mode').addEventListener('change', generateQuestion);
 </script>
 
 </body>
