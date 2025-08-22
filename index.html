@@ -33,7 +33,7 @@
   #feedback { color: green; }
   #wrongFeedback { color: red; }
 
-  #score {
+  #score, #streak, #highStreak {
     font-size: 18px;
     margin-top: 10px;
   }
@@ -41,31 +41,30 @@
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1px; /* smaller gap */
-    justify-items: stretch;
-    margin-top: 8px;
-    margin-bottom: 8px;
+    gap: 2px;
+    justify-items: center;
+    margin-top: 10px;
   }
 
   #keypad button {
-    width: 100%;       /* fill the cell */
-    height: 70px;      /* taller buttons */
-    font-size: 24px;   /* bigger text */
-    border-radius: 8px;
+    width: 70px;
+    height: 60px;
+    font-size: 22px;
+    border-radius: 10px;
     cursor: pointer;
   }
 
   #answerInput {
     width: 70%;
     text-align: center;
-    font-size: 20px;
+    font-size: 22px;
     margin-top: 10px;
   }
 
   @media (max-width: 400px) {
     #question { font-size: 20px; }
-    #answerInput { font-size: 18px; width: 90%; }
-    #keypad button { height: 60px; font-size: 22px; }
+    #answerInput { font-size: 18px; width: 80%; }
+    #keypad button { width: 60px; height: 55px; font-size: 20px; }
   }
 </style>
 </head>
@@ -106,6 +105,8 @@
   <div id="feedback"></div>
   <div id="wrongFeedback"></div>
   <div id="score">Score: 0</div>
+  <div id="streak">Streak: 0 days</div>
+  <div id="highStreak">Highest Streak: 0 days</div>
   <button id="backBtn">Back to Settings</button>
 </div>
 
@@ -115,6 +116,8 @@ let mode = 'addition';
 let maxNumber = 20;
 let score = 0;
 let answer = 0;
+let streak = 0;
+let highStreak = 0;
 
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
@@ -122,7 +125,36 @@ const questionEl = document.getElementById('question');
 const feedbackEl = document.getElementById('feedback');
 const wrongFeedbackEl = document.getElementById('wrongFeedback');
 const scoreEl = document.getElementById('score');
+const streakEl = document.getElementById('streak');
+const highStreakEl = document.getElementById('highStreak');
 const answerInput = document.getElementById('answerInput');
+
+function updateStreak() {
+  const today = new Date().toDateString();
+  const lastPlayed = localStorage.getItem('lastPlayed');
+  streak = Number(localStorage.getItem('streak') || 0);
+  highStreak = Number(localStorage.getItem('highStreak') || 0);
+
+  if (lastPlayed === today) {
+    // already played today, do nothing
+  } else if (lastPlayed === new Date(Date.now() - 86400000).toDateString()) {
+    // played yesterday, increment streak
+    streak++;
+  } else {
+    // missed a day, reset streak
+    streak = 1;
+  }
+
+  // update high streak if needed
+  if (streak > highStreak) highStreak = streak;
+
+  localStorage.setItem('streak', streak);
+  localStorage.setItem('highStreak', highStreak);
+  localStorage.setItem('lastPlayed', today);
+
+  streakEl.innerText = `Streak: ${streak} day${streak > 1 ? 's' : ''}`;
+  highStreakEl.innerText = `Highest Streak: ${highStreak} day${highStreak > 1 ? 's' : ''}`;
+}
 
 document.getElementById('startBtn').addEventListener('click', () => {
   const nameInput = document.getElementById('playerName').value.trim();
@@ -139,6 +171,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 
   startScreen.style.display = 'none';
   gameScreen.style.display = 'block';
+  updateStreak();
   generateQuestion();
 });
 
