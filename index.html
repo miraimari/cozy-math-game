@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Math Game</title>
+<title>Math Game</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
   input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
@@ -23,6 +23,7 @@
 <script>
 let answer = 0;
 
+// Generate a random arithmetic problem
 function generateQuestion() {
     let a = Math.floor(Math.random() * 50) + 1;
     let b = Math.floor(Math.random() * 50) + 1;
@@ -38,8 +39,10 @@ function generateQuestion() {
     document.getElementById('question').innerText = `What is ${a} ${op} ${b}?`;
     document.getElementById('result').innerText = '';
     document.getElementById('answerInput').value = '';
+    document.getElementById('answerInput').focus();
 }
 
+// Check the typed answer
 function checkAnswer() {
     let userAnswer = parseInt(document.getElementById('answerInput').value);
     if (userAnswer === answer) {
@@ -50,8 +53,10 @@ function checkAnswer() {
     generateQuestion();
 }
 
+// Event listener
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 
+// Start the first question
 generateQuestion();
 </script>
 
