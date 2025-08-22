@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Math Game</title>
+<title>Math Game - 1-Digit Addition</title>
 <style>
   body { font-family: Arial, sans-serif; text-align: center; margin: 20px; }
   input { font-size: 16px; padding: 5px; width: 80px; text-align: center; }
@@ -13,36 +13,31 @@
 </head>
 <body>
 
-<h1>Math Game</h1>
+<h1>Math Game - 1-Digit Addition</h1>
 <div id="question"></div>
 <input type="text" id="answerInput" placeholder="Your answer">
 <br>
 <button id="submitBtn">Submit</button>
 <div id="result"></div>
+<div id="score">Score: 0</div>
 
 <script>
 let answer = 0;
+let score = 0;
 
-// Generate a new arithmetic problem
+// Generate a 1-digit addition problem
 function generateQuestion() {
-    let a = Math.floor(Math.random() * 50) + 1;
-    let b = Math.floor(Math.random() * 50) + 1;
-    let operators = ['+', '-', '*'];
-    let op = operators[Math.floor(Math.random() * operators.length)];
+    let a = Math.floor(Math.random() * 9) + 1; // 1-9
+    let b = Math.floor(Math.random() * 9) + 1; // 1-9
+    answer = a + b;
 
-    switch(op) {
-        case '+': answer = a + b; break;
-        case '-': answer = a - b; break;
-        case '*': answer = a * b; break;
-    }
-
-    document.getElementById('question').innerText = `What is ${a} ${op} ${b}?`;
+    document.getElementById('question').innerText = `What is ${a} + ${b}?`;
     document.getElementById('result').innerText = '';
     document.getElementById('answerInput').value = '';
     document.getElementById('answerInput').focus();
 }
 
-// Check the typed answer
+// Check if the answer is correct
 function checkAnswer() {
     let input = document.getElementById('answerInput').value.trim();
     if (input === '') {
@@ -52,9 +47,11 @@ function checkAnswer() {
     let userAnswer = Number(input);
     if (userAnswer === answer) {
         document.getElementById('result').innerText = "Correct! 🎉";
+        score++;
     } else {
         document.getElementById('result').innerText = `Oops! Correct answer: ${answer}`;
     }
+    document.getElementById('score').innerText = `Score: ${score}`;
     generateQuestion();
 }
 
