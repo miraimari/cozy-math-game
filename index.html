@@ -5,69 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cozy Math Game</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 5px;
-    font-size: 18px;
-  }
-
-  input, select, button {
-    font-size: 18px;
-    padding: 8px;
-    margin: 5px 0;
-  }
-
-  #question {
-    font-size: 24px;
-    margin-top: 15px;
-    word-wrap: break-word;
-  }
-
-  #feedback, #wrongFeedback {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-  }
-
-  #feedback { color: green; }
-  #wrongFeedback { color: red; }
-
-  #score {
-    font-size: 18px;
-    margin-top: 10px;
-  }
-
-  #keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    justify-items: center;
-    margin-top: 10px;
-  }
-
-  #keypad button {
-    width: 70px;
-    height: 60px;
-    font-size: 22px;
-    border-radius: 10px;
-    cursor: pointer;
-  }
-
-  #answerInput {
-    width: 70%;
-    text-align: center;
-    font-size: 20px;
-    margin-top: 10px;
-  }
-
-  @media (max-width: 400px) {
-    #question { font-size: 20px; }
-    #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 60px; height: 50px; font-size: 20px; }
-  }
-
+  body { font-family: Arial, sans-serif; text-align: center; margin: 5px; font-size: 18px; }
+  input, select, button { font-size: 18px; padding: 8px; margin: 5px 0; }
+  #question { font-size: 24px; margin-top: 15px; word-wrap: break-word; }
+  #feedback, #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 10px; }
+  #feedback { color: green; } #wrongFeedback { color: red; }
+  #score { font-size: 18px; margin-top: 10px; }
+  #keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; justify-items: center; margin-top: 10px; }
+  #keypad button { width: 70px; height: 60px; font-size: 22px; border-radius: 10px; cursor: pointer; }
+  #answerInput { width: 70%; text-align: center; font-size: 20px; margin-top: 10px; }
   #streakMessage { color: orange; font-weight: bold; margin-top: 5px; }
+  @media (max-width: 400px) { #question { font-size: 20px; } #answerInput { font-size: 18px; width: 80%; } #keypad button { width: 60px; height: 50px; font-size: 20px; } }
 </style>
 </head>
 <body>
@@ -82,18 +30,17 @@
     <option value="subtraction">Subtraction only</option>
     <option value="mixed">Mixed</option>
   </select><br>
-  <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
+  <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number"><br>
   <div id="streakInfo">🔥 Current Streak: 0 days</div>
   <div id="streakMessage"></div>
   <button id="startBtn">Start Game</button>
-  <button id="topScoresBtn">Top Scores</button>
+  <button id="topScoresBtn">🏆 Top Scores</button>
 </div>
 
 <!-- GAME SCREEN -->
 <div id="gameScreen" style="display:none;">
   <div id="question"></div>
   <input type="text" id="answerInput" readonly placeholder="Your answer"><br>
-
   <div id="keypad">
     <button class="numBtn">1</button>
     <button class="numBtn">2</button>
@@ -108,7 +55,6 @@
     <button class="numBtn">0</button>
     <button id="submitBtn">Submit</button>
   </div>
-
   <div id="feedback"></div>
   <div id="wrongFeedback"></div>
   <div id="score">Score: 0</div>
@@ -118,8 +64,7 @@
 <!-- TOP SCORES SCREEN -->
 <div id="topScoresScreen" style="display:none;">
   <h2>🏆 Top Scores</h2>
-  <div id="highScore">High Score: 0</div>
-  <div id="highestStreak">Highest Streak: 0 days</div>
+  <div id="topScoresList"></div>
   <button id="backFromScoresBtn">Back</button>
 </div>
 
@@ -133,158 +78,119 @@ let answer = 0;
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
 const topScoresScreen = document.getElementById('topScoresScreen');
-
 const questionEl = document.getElementById('question');
 const feedbackEl = document.getElementById('feedback');
 const wrongFeedbackEl = document.getElementById('wrongFeedback');
 const scoreEl = document.getElementById('score');
 const answerInput = document.getElementById('answerInput');
-
 const streakInfo = document.getElementById('streakInfo');
 const streakMessage = document.getElementById('streakMessage');
 
-function formatDate(d) { return d.toISOString().split('T')[0]; }
+function formatDate(d){ return d.toISOString().split('T')[0]; }
 
+// PLAYER DATA STORAGE
+function getPlayerData() {
+  let data = JSON.parse(localStorage.getItem('playerData') || '{}');
+  return data;
+}
+function savePlayerData(data) {
+  localStorage.setItem('playerData', JSON.stringify(data));
+}
+
+// UPDATE STREAK DISPLAY
 function updateStreakDisplay() {
-  const streak = Number(localStorage.getItem('streak')) || 0;
+  const data = getPlayerData();
+  let streak = (data[playerName]?.streak) || 0;
   streakInfo.innerText = `🔥 Current Streak: ${streak} day${streak!==1?'s':''}`;
 }
 
+// CHECK DAILY STREAK RESET
 function checkDailyStreak() {
+  const data = getPlayerData();
   const today = formatDate(new Date());
-  const yesterday = formatDate(new Date(Date.now() - 86400000));
-  let lastStreakDate = localStorage.getItem('lastStreakDate');
-  let streak = Number(localStorage.getItem('streak')) || 0;
-
-  if (lastStreakDate && lastStreakDate !== today && lastStreakDate !== yesterday) {
-    streak = 0;
-    localStorage.setItem('streak', streak);
-    streakMessage.innerText = `😢 Oh no, ${playerName || "Player"}! You lost your streak. Start again today!`;
+  const yesterday = formatDate(new Date(Date.now()-86400000));
+  if (!data[playerName]) data[playerName]={score:0, highScore:0, streak:0, highestStreak:0, lastStreakDate:''};
+  const lastStreakDate = data[playerName].lastStreakDate;
+  if(lastStreakDate && lastStreakDate !== today && lastStreakDate !== yesterday){
+    data[playerName].streak = 0;
+    streakMessage.innerText = `😢 Oh no, ${playerName}! You lost your streak. Start again today!`;
   } else {
-    streakMessage.innerText = '';
+    streakMessage.innerText='';
   }
-
+  // reset daily score
+  if(data[playerName].lastScoreDate !== today) data[playerName].score=0;
+  savePlayerData(data);
   updateStreakDisplay();
 }
-
-window.addEventListener('load', () => { checkDailyStreak(); });
 
 // START GAME
 document.getElementById('startBtn').addEventListener('click', () => {
   const nameInput = document.getElementById('playerName').value.trim();
-  if (!nameInput) { alert("Please enter your name!"); return; }
+  if(!nameInput){ alert("Enter your name!"); return; }
   playerName = nameInput;
-  localStorage.setItem('playerName', playerName);
+  const data = getPlayerData();
+  if(!data[playerName]) data[playerName]={score:0, highScore:0, streak:0, highestStreak:0, lastStreakDate:'', lastScoreDate:formatDate(new Date())};
+  savePlayerData(data);
 
   mode = document.getElementById('mode').value;
   maxNumber = Number(document.getElementById('maxNumber').value);
-  if (isNaN(maxNumber) || maxNumber < 1) { alert("Enter a valid max number!"); return; }
+  if(isNaN(maxNumber)||maxNumber<1){ alert("Enter valid max number!"); return; }
 
-  score = 0;
-  scoreEl.innerText = `Score: ${score}`;
-  feedbackEl.innerText = '';
-  wrongFeedbackEl.innerText = '';
+  score = data[playerName].score || 0;
+  scoreEl.innerText=`Score: ${score}`;
+  feedbackEl.innerText=''; wrongFeedbackEl.innerText='';
 
-  startScreen.style.display = 'none';
-  topScoresScreen.style.display = 'none';
-  gameScreen.style.display = 'block';
+  startScreen.style.display='none';
+  topScoresScreen.style.display='none';
+  gameScreen.style.display='block';
   generateQuestion();
+  updateStreakDisplay();
 });
 
 // BACK BUTTONS
-document.getElementById('backBtn').addEventListener('click', () => {
-  gameScreen.style.display = 'none';
-  startScreen.style.display = 'block';
+document.getElementById('backBtn').addEventListener('click',()=>{
+  gameScreen.style.display='none';
+  startScreen.style.display='block';
   checkDailyStreak();
 });
-
-document.getElementById('topScoresBtn').addEventListener('click', () => {
-  startScreen.style.display = 'none';
-  gameScreen.style.display = 'none';
+document.getElementById('topScoresBtn').addEventListener('click',()=>{
+  startScreen.style.display='none';
   displayTopScores();
-  topScoresScreen.style.display = 'block';
+  topScoresScreen.style.display='block';
 });
-
-document.getElementById('backFromScoresBtn').addEventListener('click', () => {
-  topScoresScreen.style.display = 'none';
-  startScreen.style.display = 'block';
+document.getElementById('backFromScoresBtn').addEventListener('click',()=>{
+  topScoresScreen.style.display='none';
+  startScreen.style.display='block';
 });
 
 // KEYPAD
-document.querySelectorAll('.numBtn').forEach(btn => {
-  btn.addEventListener('click', () => { answerInput.value += btn.innerText; });
-});
-document.getElementById('clearBtn').addEventListener('click', () => { answerInput.value = ''; });
-document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+document.querySelectorAll('.numBtn').forEach(btn=>{btn.addEventListener('click',()=>{answerInput.value+=btn.innerText;});});
+document.getElementById('clearBtn').addEventListener('click',()=>{answerInput.value='';});
+document.getElementById('submitBtn').addEventListener('click',checkAnswer);
 
 // GENERATE QUESTION
-function generateQuestion() {
-  answerInput.value = '';
+function generateQuestion(){
+  answerInput.value='';
   answerInput.focus();
-  let num1 = Math.floor(Math.random() * (maxNumber + 1));
-  let num2 = Math.floor(Math.random() * (maxNumber + 1));
+  let num1=Math.floor(Math.random()*(maxNumber+1));
+  let num2=Math.floor(Math.random()*(maxNumber+1));
   let op = '+';
-
-  if (mode==='subtraction') op='-';
-  else if (mode==='mixed') op = Math.random()<0.5 ? '+' : '-';
-
-  if (op==='-') { if (num1<num2) [num1,num2]=[num2,num1]; answer=num1-num2; }
-  else { answer=num1+num2; }
-
+  if(mode==='subtraction') op='-';
+  else if(mode==='mixed') op=Math.random()<0.5?'+':'-';
+  if(op==='-'){ if(num1<num2)[num1,num2]=[num2,num1]; answer=num1-num2; } else { answer=num1+num2; }
   questionEl.innerText = `${playerName}, what is ${num1} ${op} ${num2}?`;
-  feedbackEl.innerText = '';
-  wrongFeedbackEl.innerText = '';
+  feedbackEl.innerText=''; wrongFeedbackEl.innerText='';
 }
 
 // CHECK ANSWER
-function checkAnswer() {
-  const input = answerInput.value.trim();
-  const userAnswer = Number(input);
-  if (input==='' || isNaN(userAnswer)) { alert("Please enter a number!"); return; }
+function checkAnswer(){
+  const input=answerInput.value.trim();
+  const userAnswer=Number(input);
+  if(input===''||isNaN(userAnswer)){alert("Enter a number!"); return;}
 
-  if (userAnswer===answer) {
+  const data=getPlayerData();
+  const today=formatDate(new Date());
+
+  if(userAnswer===answer){
     score++;
-    scoreEl.innerText = `Score: ${score}`;
-
-    const today = formatDate(new Date());
-    let lastStreakDate = localStorage.getItem('lastStreakDate');
-    let streak = Number(localStorage.getItem('streak')) || 0;
-
-    if (lastStreakDate!==today) {
-      streak++;
-      localStorage.setItem('streak', streak);
-      localStorage.setItem('lastStreakDate', today);
-      feedbackEl.innerText = `🎉 Awesome, ${playerName}, that is correct! Your streak is now ${streak} day${streak!==1?'s':''}!`;
-
-      // Update highest streak
-      let highestStreak = Number(localStorage.getItem('highestStreak')) || 0;
-      if (streak > highestStreak) localStorage.setItem('highestStreak', streak);
-    } else {
-      feedbackEl.innerText = `✅ Correct, ${playerName}!`;
-    }
-
-    // Update high score
-    let highScore = Number(localStorage.getItem('highScore')) || 0;
-    if (score > highScore) localStorage.setItem('highScore', score);
-
-    wrongFeedbackEl.innerText = '';
-    setTimeout(generateQuestion, 2000);
-  } else {
-    wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
-    feedbackEl.innerText = '';
-    answerInput.value = '';
-    answerInput.focus();
-  }
-}
-
-// DISPLAY TOP SCORES
-function displayTopScores() {
-  const highScore = Number(localStorage.getItem('highScore')) || 0;
-  const highestStreak = Number(localStorage.getItem('highestStreak')) || 0;
-  document.getElementById('highScore').innerText = `High Score: ${highScore}`;
-  document.getElementById('highestStreak').innerText = `Highest Streak: ${highestStreak} day${highestStreak!==1?'s':''}`;
-}
-</script>
-
-</body>
-</html>
+    scoreEl.innerText=`Score: ${score}`;
