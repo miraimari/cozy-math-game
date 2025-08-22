@@ -8,34 +8,18 @@
   body {
     font-family: Arial, sans-serif;
     text-align: center;
-    margin: 5px;
-    font-size: 18px;
+    margin: 0;
+    padding: 0;
+    background: #f2f2f2;
   }
 
-  input, select, button {
-    font-size: 18px;
-    padding: 8px;
-    margin: 5px 0;
+  .screen {
+    display: none;
+    padding: 20px;
   }
 
-  #question {
-    font-size: 24px;
-    margin-top: 15px;
-    word-wrap: break-word;
-  }
-
-  #feedback, #wrongFeedback {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-  }
-
-  #feedback { color: green; }
-  #wrongFeedback { color: red; }
-
-  #score {
-    font-size: 18px;
-    margin-top: 10px;
+  .active {
+    display: block;
   }
 
   #keypad {
@@ -52,41 +36,55 @@
     font-size: 20px;
     border-radius: 8px;
     cursor: pointer;
-  }
-
-  #answerInput {
-    width: 70%;
-    text-align: center;
-    font-size: 20px;
-    margin-top: 10px;
+    min-width: 60px;
+    min-height: 50px;
   }
 
   @media (max-width: 400px) {
-    #question { font-size: 20px; }
-    #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 50px; height: 45px; font-size: 18px; }
+    #keypad button {
+      width: 50px;
+      height: 45px;
+      font-size: 18px;
+      min-width: 50px;
+      min-height: 45px;
+    }
+  }
+
+  input {
+    font-size: 20px;
+    padding: 5px;
+    width: 100px;
+    text-align: center;
+  }
+
+  #feedback, #wrongFeedback, #score {
+    font-size: 22px;
+    margin-top: 10px;
   }
 </style>
 </head>
 <body>
 
-<h1>Cozy Math Game</h1>
-
-<div id="startScreen">
-  <input type="text" id="playerName" placeholder="Enter your name"><br>
-  <select id="mode">
-    <option value="addition">Addition only</option>
-    <option value="subtraction">Subtraction only</option>
+<div id="startScreen" class="screen active">
+  <h2>Welcome to Cozy Math Game!</h2>
+  <p>Enter your name:</p>
+  <input type="text" id="playerNameInput" placeholder="Your name">
+  <p>Select mode:</p>
+  <select id="modeSelect">
+    <option value="addition">Addition</option>
+    <option value="subtraction">Subtraction</option>
     <option value="mixed">Mixed</option>
-  </select><br>
-  <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
+  </select>
+  <p>Max number for operands:</p>
+  <input type="number" id="maxNumberInput" value="20" min="1" max="40">
+  <br><br>
   <button id="startBtn">Start Game</button>
 </div>
 
-<div id="gameScreen" style="display:none;">
-  <div id="question"></div>
-  <input type="text" id="answerInput" readonly placeholder="Your answer"><br>
-
+<div id="gameScreen" class="screen">
+  <h2 id="question"></h2>
+  <input type="text" id="answerInput" disabled>
+  
   <div id="keypad">
     <button class="numBtn">1</button>
     <button class="numBtn">2</button>
@@ -103,9 +101,10 @@
   </div>
 
   <div id="feedback"></div>
-  <div id="wrongFeedback"></div>
+  <div id="wrongFeedback" style="color:red;"></div>
   <div id="score">Score: 0</div>
-  <button id="backBtn">Back to Settings</button>
+  <br>
+  <button id="backToSettingsBtn">Back to Settings</button>
 </div>
 
 <script>
@@ -117,73 +116,63 @@ let answer = 0;
 
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
+const playerNameInput = document.getElementById('playerNameInput');
+const modeSelect = document.getElementById('modeSelect');
+const maxNumberInput = document.getElementById('maxNumberInput');
 const questionEl = document.getElementById('question');
+const answerInput = document.getElementById('answerInput');
 const feedbackEl = document.getElementById('feedback');
 const wrongFeedbackEl = document.getElementById('wrongFeedback');
 const scoreEl = document.getElementById('score');
-const answerInput = document.getElementById('answerInput');
 
 document.getElementById('startBtn').addEventListener('click', () => {
-  const nameInput = document.getElementById('playerName').value.trim();
-  if (!nameInput) { alert("Please enter your name!"); return; }
-  playerName = nameInput;
-  mode = document.getElementById('mode').value;
-  maxNumber = Number(document.getElementById('maxNumber').value);
-  if (isNaN(maxNumber) || maxNumber < 1) { alert("Enter a valid max number!"); return; }
-
+  playerName = playerNameInput.value.trim() || 'Player';
+  mode = modeSelect.value;
+  maxNumber = parseInt(maxNumberInput.value) || 20;
   score = 0;
   scoreEl.innerText = `Score: ${score}`;
-  feedbackEl.innerText = '';
-  wrongFeedbackEl.innerText = '';
-
-  startScreen.style.display = 'none';
-  gameScreen.style.display = 'block';
+  startScreen.classList.remove('active');
+  gameScreen.classList.add('active');
   generateQuestion();
 });
 
-document.getElementById('backBtn').addEventListener('click', () => {
-  gameScreen.style.display = 'none';
-  startScreen.style.display = 'block';
-});
-
-document.querySelectorAll('.numBtn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    answerInput.value += btn.innerText;
-  });
-});
-
-document.getElementById('clearBtn').addEventListener('click', () => {
+document.getElementById('backToSettingsBtn').addEventListener('click', () => {
+  gameScreen.classList.remove('active');
+  startScreen.classList.add('active');
   answerInput.value = '';
+  feedbackEl.innerText = '';
+  wrongFeedbackEl.innerText = '';
 });
-
-document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 
 function generateQuestion() {
   answerInput.value = '';
   answerInput.focus();
-  let num1 = Math.floor(Math.random() * (maxNumber + 1));
-  let num2 = Math.floor(Math.random() * (maxNumber + 1));
-  let op = '+';
-
-  if (mode === 'subtraction') op = '-';
-  else if (mode === 'mixed') op = Math.random() < 0.5 ? '+' : '-';
-
-  if (op === '-') {
-    if (num1 < num2) [num1, num2] = [num2, num1];
-    answer = num1 - num2;
-  } else {
-    answer = num1 + num2;
-  }
-
-  questionEl.innerText = `${playerName}, what is ${num1} ${op} ${num2}?`;
   feedbackEl.innerText = '';
   wrongFeedbackEl.innerText = '';
+
+  let num1 = Math.floor(Math.random() * (maxNumber + 1));
+  let num2 = Math.floor(Math.random() * (maxNumber + 1));
+  let op = mode;
+
+  if (mode === 'mixed') {
+    op = Math.random() < 0.5 ? 'addition' : 'subtraction';
+  }
+
+  if (op === 'subtraction' && num2 > num1) {
+    [num1, num2] = [num2, num1]; // ensure non-negative
+  }
+
+  answer = op === 'addition' ? num1 + num2 : num1 - num2;
+  questionEl.innerText = `${num1} ${op === 'addition' ? '+' : '-'} ${num2} = ?`;
 }
 
 function checkAnswer() {
   const input = answerInput.value.trim();
   const userAnswer = Number(input);
-  if (input === '' || isNaN(userAnswer)) { alert("Please enter a number!"); return; }
+  if (input === '' || isNaN(userAnswer)) {
+    alert("Please enter a number!");
+    return;
+  }
 
   if (userAnswer === answer) {
     score++;
@@ -198,8 +187,20 @@ function checkAnswer() {
     answerInput.focus();
   }
 }
+
+// Keypad functionality
+document.querySelectorAll('.numBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    answerInput.value += btn.innerText;
+  });
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  answerInput.value = '';
+});
+
+document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 </script>
 
 </body>
 </html>
-
