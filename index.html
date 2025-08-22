@@ -14,9 +14,16 @@
 </head>
 <body>
 
-<h1>Math Game - Addition up to 20</h1>
+<h1>Math Game</h1>
 
-<div id="question"></div>
+<label for="mode">Choose mode: </label>
+<select id="mode">
+    <option value="addition">Addition only</option>
+    <option value="subtraction">Subtraction only</option>
+    <option value="mixed">Mixed</option>
+</select>
+
+<div id="question" style="margin-top: 20px;"></div>
 <input type="text" id="answerInput" placeholder="Your answer">
 <br>
 <button id="submitBtn">Submit</button>
@@ -29,13 +36,33 @@
 let answer = 0;
 let score = 0;
 
-// Generate a new addition problem with numbers 1-20
+// Generate a new math problem
 function generateQuestion() {
-    const a = Math.floor(Math.random() * 20) + 1; // 1 to 20
-    const b = Math.floor(Math.random() * 20) + 1; // 1 to 20
-    answer = a + b;
+    const mode = document.getElementById('mode').value;
 
-    document.getElementById('question').innerText = `What is ${a} + ${b}?`;
+    let a = Math.floor(Math.random() * 20) + 1; // 1 to 20
+    let b = Math.floor(Math.random() * 20) + 1; // 1 to 20
+    let operation = '+';
+
+    if (mode === 'addition') {
+        operation = '+';
+        answer = a + b;
+    } else if (mode === 'subtraction') {
+        if (a < b) [a, b] = [b, a]; // ensure non-negative
+        operation = '-';
+        answer = a - b;
+    } else { // mixed
+        if (Math.random() < 0.5) { // addition
+            operation = '+';
+            answer = a + b;
+        } else { // subtraction
+            if (a < b) [a, b] = [b, a];
+            operation = '-';
+            answer = a - b;
+        }
+    }
+
+    document.getElementById('question').innerText = `What is ${a} ${operation} ${b}?`;
     document.getElementById('answerInput').value = '';
     document.getElementById('answerInput').focus();
 
@@ -43,7 +70,7 @@ function generateQuestion() {
     document.getElementById('wrongFeedback').innerText = '';
 }
 
-// Check the typed answer
+// Check typed answer
 function checkAnswer() {
     const input = document.getElementById('answerInput').value.trim();
     const userAnswer = Number(input);
@@ -57,7 +84,6 @@ function checkAnswer() {
         score++;
         document.getElementById('feedback').innerText = "✅ Correct!";
         document.getElementById('wrongFeedback').innerText = '';
-        // Wait a moment, then generate next question
         setTimeout(generateQuestion, 1000);
     } else {
         document.getElementById('wrongFeedback').innerText = "❌ Wrong! Try again.";
@@ -69,14 +95,17 @@ function checkAnswer() {
     document.getElementById('score').innerText = `Score: ${score}`;
 }
 
-// Submit button & Enter key
+// Event listeners
 document.getElementById('submitBtn').addEventListener('click', checkAnswer);
 document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
 });
 
-// Start the first question
+// Start first question
 generateQuestion();
+
+// Regenerate question if mode changes
+document.getElementById('mode').addEventListener('change', generateQuestion);
 </script>
 
 </body>
