@@ -2,77 +2,178 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Math Game with Streaks and Avatars</title>
+  <title>Math Game with Avatar</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; background: #f0f8ff; }
+    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
     .screen { display: none; padding: 20px; }
-    #startScreen, #gameScreen, #scoresScreen, #avatarScreen { display: none; }
-    h1 { font-size: 24px; margin-bottom: 20px; }
-    button { padding: 10px 20px; margin: 8px; font-size: 16px; border-radius: 8px; cursor: pointer; }
+    #loadScreen { display: block; }
+    button { margin: 5px; padding: 10px 20px; font-size: 18px; border-radius: 8px; cursor: pointer; }
     #keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; justify-items: center; margin-top: 10px; }
-    #keypad button { width: 80px; height: 60px; font-size: 22px; border-radius: 8px; }
-    #feedback { margin-top: 15px; font-size: 18px; min-height: 24px; }
-    img.avatar { width: 80px; height: 80px; border-radius: 12px; margin: 10px; cursor: pointer; border: 3px solid transparent; }
-    img.avatar.selected { border-color: #007BFF; }
-    .avatar-display { width: 50px; height: 50px; border-radius: 8px; vertical-align: middle; margin-right: 10px; }
+    #keypad button { width: 80px; height: 60px; font-size: 20px; border-radius: 8px; }
+    img.avatar-option { width: 80px; height: 80px; cursor: pointer; border-radius: 8px; margin: 5px; border: 2px solid transparent; }
+    img.avatar-option.selected { border: 2px solid blue; }
+    #avatarPreview { width: 100px; height: 100px; border-radius: 10px; margin-top: 10px; }
   </style>
 </head>
 <body>
 
-<div id="startScreen" class="screen">
-  <h1>Math Game</h1>
-  <p id="streakInfo"></p>
-  <p id="dailyScoreInfo"></p>
-  <input id="playerName" type="text" placeholder="Enter your name"><br><br>
-  <label>Choose Mode:</label><br>
-  <select id="modeSelect">
-    <option value="addition">Addition</option>
-    <option value="subtraction">Subtraction</option>
-    <option value="mixed">Mixed</option>
-  </select><br><br>
-  <label>Max Number:</label><br>
-  <input id="maxNumber" type="number" value="10" min="5" max="100"><br><br>
-  <button onclick="goToGame()">Start Game</button>
-  <button onclick="showScreen('scoresScreen')">Top Scores</button>
-  <button onclick="showScreen('avatarScreen')">Avatar</button>
-</div>
-
-<div id="gameScreen" class="screen">
-  <h2 id="playerInfo"></h2>
-  <p id="question"></p>
-  <input id="answer" type="text" readonly>
-  <div id="keypad">
-    <button onclick="pressNum(1)">1</button>
-    <button onclick="pressNum(2)">2</button>
-    <button onclick="pressNum(3)">3</button>
-    <button onclick="pressNum(4)">4</button>
-    <button onclick="pressNum(5)">5</button>
-    <button onclick="pressNum(6)">6</button>
-    <button onclick="pressNum(7)">7</button>
-    <button onclick="pressNum(8)">8</button>
-    <button onclick="pressNum(9)">9</button>
-    <button onclick="clearAnswer()">Clear</button>
-    <button onclick="pressNum(0)">0</button>
-    <button onclick="submitAnswer()">Submit</button>
+  <!-- Load Screen -->
+  <div id="loadScreen" class="screen">
+    <h1>Math Game</h1>
+    <input type="text" id="playerName" placeholder="Enter your name"><br><br>
+    <p id="streakInfo"></p>
+    <p id="scoreInfo"></p>
+    <img id="avatarPreview" src="" alt="Your Avatar"><br>
+    <button onclick="showScreen('settingsScreen')">Start Game</button>
+    <button onclick="showScreen('topScoresScreen')">Top Scores</button>
+    <button onclick="showScreen('avatarScreen')">Avatar</button>
   </div>
-  <p id="feedback"></p>
-  <button onclick="showScreen('startScreen')">Back to Start</button>
-</div>
 
-<div id="scoresScreen" class="screen">
-  <h2>Top Scores</h2>
-  <div id="scoresList"></div>
-  <button onclick="showScreen('startScreen')">Back</button>
-</div>
+  <!-- Settings Screen -->
+  <div id="settingsScreen" class="screen">
+    <h2>Choose Game Settings</h2>
+    <label>Mode:
+      <select id="modeSelect">
+        <option value="addition">Addition</option>
+        <option value="subtraction">Subtraction</option>
+        <option value="mixed">Mixed</option>
+      </select>
+    </label><br><br>
+    <label>Max Number:
+      <input type="number" id="maxNumber" value="10" min="1">
+    </label><br><br>
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="showScreen('loadScreen')">Back</button>
+  </div>
 
-<div id="avatarScreen" class="screen">
-  <h2>Choose Your Avatar</h2>
-  <div id="avatarOptions"></div>
-  <button onclick="showScreen('startScreen')">Back</button>
-</div>
+  <!-- Game Screen -->
+  <div id="gameScreen" class="screen">
+    <h2 id="question"></h2>
+    <input type="text" id="answer" readonly>
+    <div id="keypad"></div>
+    <p id="feedback"></p>
+    <p id="scoreDisplay">Score: 0</p>
+    <button onclick="showScreen('loadScreen')">Exit Game</button>
+  </div>
 
-<script>
-  let currentPlayer = "";
-  let mode = "addition";
-  let ma
+  <!-- Top Scores Screen -->
+  <div id="topScoresScreen" class="screen">
+    <h2>Top Scores</h2>
+    <div id="topScoresList"></div>
+    <button onclick="showScreen('loadScreen')">Back</button>
+  </div>
+
+  <!-- Avatar Screen -->
+  <div id="avatarScreen" class="screen">
+    <h2>Select Your Avatar</h2>
+    <div id="avatarChoices">
+      <!-- Replace with your own images -->
+      <img src="avatar1.png" class="avatar-option" onclick="selectAvatar(this, 'avatar1.png')">
+      <img src="avatar2.png" class="avatar-option" onclick="selectAvatar(this, 'avatar2.png')">
+      <img src="avatar3.png" class="avatar-option" onclick="selectAvatar(this, 'avatar3.png')">
+    </div>
+    <button onclick="saveAvatar()">Save Avatar</button>
+    <button onclick="showScreen('loadScreen')">Back</button>
+  </div>
+
+  <script>
+    let currentScreen = "loadScreen";
+    let currentPlayer = "";
+    let playerData = JSON.parse(localStorage.getItem("playerData")) || {};
+    let currentScore = 0;
+    let streakMessageShown = false;
+    let selectedAvatar = "";
+
+    function showScreen(screenId) {
+      document.getElementById(currentScreen).style.display = "none";
+      document.getElementById(screenId).style.display = "block";
+      currentScreen = screenId;
+      if (screenId === "loadScreen") updateLoadScreen();
+      if (screenId === "topScoresScreen") updateTopScores();
+    }
+
+    function updateLoadScreen() {
+      let name = document.getElementById("playerName").value;
+      if (name) currentPlayer = name;
+      if (!playerData[currentPlayer]) {
+        playerData[currentPlayer] = { streak: 0, lastPlayed: "", highScore: 0, bestStreak: 0, avatar: "" };
+      }
+      let p = playerData[currentPlayer];
+      document.getElementById("streakInfo").innerText = `🔥 Streak: ${p.streak} days (Best: ${p.bestStreak})`;
+      document.getElementById("scoreInfo").innerText = `🏆 High Score: ${p.highScore}`;
+      document.getElementById("avatarPreview").src = p.avatar || "";
+      localStorage.setItem("playerData", JSON.stringify(playerData));
+    }
+
+    function selectAvatar(img, src) {
+      document.querySelectorAll(".avatar-option").forEach(el => el.classList.remove("selected"));
+      img.classList.add("selected");
+      selectedAvatar = src;
+    }
+
+    function saveAvatar() {
+      if (!currentPlayer) currentPlayer = document.getElementById("playerName").value;
+      if (!playerData[currentPlayer]) playerData[currentPlayer] = { streak: 0, lastPlayed: "", highScore: 0, bestStreak: 0, avatar: "" };
+      playerData[currentPlayer].avatar = selectedAvatar;
+      localStorage.setItem("playerData", JSON.stringify(playerData));
+      showScreen("loadScreen");
+    }
+
+    function startGame() {
+      currentScore = 0;
+      streakMessageShown = false;
+      showScreen("gameScreen");
+      generateQuestion();
+    }
+
+    function generateQuestion() {
+      let max = parseInt(document.getElementById("maxNumber").value);
+      let mode = document.getElementById("modeSelect").value;
+      let num1 = Math.floor(Math.random() * (max + 1));
+      let num2 = Math.floor(Math.random() * (max + 1));
+      let operator = mode === "addition" ? "+" : mode === "subtraction" ? "-" : Math.random() < 0.5 ? "+" : "-";
+      document.getElementById("question").innerText = `${num1} ${operator} ${num2}`;
+      document.getElementById("answer").value = "";
+      setupKeypad();
+    }
+
+    function setupKeypad() {
+      let keypad = document.getElementById("keypad");
+      keypad.innerHTML = "";
+      for (let i = 1; i <= 9; i++) {
+        keypad.innerHTML += `<button onclick="pressKey('${i}')">${i}</button>`;
+      }
+      keypad.innerHTML += `<button onclick="clearInput()">Clear</button>`;
+      keypad.innerHTML += `<button onclick="pressKey('0')">0</button>`;
+      keypad.innerHTML += `<button onclick="submitAnswer()">Submit</button>`;
+    }
+
+    function pressKey(num) { document.getElementById("answer").value += num; }
+    function clearInput() { document.getElementById("answer").value = ""; }
+
+    function submitAnswer() {
+      let q = document.getElementById("question").innerText.split(" ");
+      let correct = q[1] === "+" ? parseInt(q[0]) + parseInt(q[2]) : parseInt(q[0]) - parseInt(q[2]);
+      let ans = parseInt(document.getElementById("answer").value);
+      let feedback = document.getElementById("feedback");
+      if (ans === correct) {
+        currentScore++;
+        document.getElementById("scoreDisplay").innerText = `Score: ${currentScore}`;
+        feedback.innerText = "✅ Correct!";
+      } else {
+        feedback.innerText = `❌ Oops! Correct answer was ${correct}`;
+      }
+      setTimeout(generateQuestion, 2000);
+    }
+
+    function updateTopScores() {
+      let list = document.getElementById("topScoresList");
+      list.innerHTML = "";
+      Object.keys(playerData).forEach(name => {
+        let p = playerData[name];
+        list.innerHTML += `<p>${name} — High Score: ${p.highScore}, Best Streak: ${p.bestStreak}</p>`;
+      });
+    }
+  </script>
+</body>
+</html>
