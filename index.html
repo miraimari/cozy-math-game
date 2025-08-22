@@ -1,243 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cozy Math Game</title>
-<style>
-  body { font-family: Arial, sans-serif; text-align: center; margin: 5px; font-size: 18px; }
-  input, select, button { font-size: 18px; padding: 8px; margin: 5px 0; }
-  #question { font-size: 24px; margin-top: 15px; word-wrap: break-word; }
-  #feedback, #wrongFeedback { font-size: 20px; font-weight: bold; margin-top: 10px; }
-  #feedback { color: green; }
-  #wrongFeedback { color: red; }
-  #score, #streak, #dailyScore { font-size: 18px; margin-top: 10px; }
-  #keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; justify-items: center; margin-top: 10px; }
-  #keypad button { width: 80px; height: 60px; font-size: 24px; border-radius: 8px; cursor: pointer; }
-  #answerInput { width: 70%; text-align: center; font-size: 20px; margin-top: 10px; }
-  @media (max-width: 400px) { #question { font-size: 20px; } #answerInput { font-size: 18px; width: 80%; } #keypad button { width: 60px; height: 50px; font-size: 20px; } }
-</style>
+  <meta charset="UTF-8">
+  <title>Math Game with Avatars</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+    .screen { display: none; padding: 20px; }
+    .active { display: block; }
+    button { padding: 10px 20px; margin: 5px; font-size: 16px; border-radius: 8px; cursor: pointer; }
+    #keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; justify-items: center; margin-top: 10px; }
+    #keypad button { width: 80px; height: 60px; font-size: 20px; border-radius: 8px; }
+    #avatarGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+    #avatarGrid img { width: 100px; height: 100px; object-fit: cover; border-radius: 12px; cursor: pointer; border: 3px solid transparent; }
+    #avatarGrid img.selected { border: 3px solid green; }
+    .avatar-small { width: 50px; height: 50px; border-radius: 8px; vertical-align: middle; }
+  </style>
 </head>
 <body>
 
-<h1>Cozy Math Game</h1>
-
-<div id="startScreen">
-  <input type="text" id="playerName" placeholder="Enter your name"><br>
-  <select id="mode">
-    <option value="addition">Addition only</option>
-    <option value="subtraction">Subtraction only</option>
-    <option value="mixed">Mixed</option>
-  </select><br>
-  <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number"><br>
-  <button id="startBtn">Start Game</button><br>
-  <button id="topScoresBtn">Top Scores</button><br>
-  <div id="streakInfo"></div>
-</div>
-
-<div id="gameScreen" style="display:none;">
-  <div id="question"></div>
-  <input type="text" id="answerInput" readonly placeholder="Your answer"><br>
-
-  <div id="keypad">
-    <button class="numBtn">1</button><button class="numBtn">2</button><button class="numBtn">3</button>
-    <button class="numBtn">4</button><button class="numBtn">5</button><button class="numBtn">6</button>
-    <button class="numBtn">7</button><button class="numBtn">8</button><button class="numBtn">9</button>
-    <button id="clearBtn">Clear</button><button class="numBtn">0</button><button id="submitBtn">Submit</button>
+  <!-- Load Screen -->
+  <div id="loadScreen" class="screen active">
+    <h1>Welcome to Math Game</h1>
+    <input id="usernameInput" placeholder="Enter your name" />
+    <br><br>
+    <div id="avatarDisplay"></div>
+    <br>
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="showSettings()">Settings</button>
+    <button onclick="showTopScores()">Top Scores</button>
+    <button onclick="showAvatarScreen()">Avatar</button>
+    <p id="streakInfo"></p>
+    <p id="dailyScoreInfo"></p>
   </div>
 
-  <div id="feedback"></div>
-  <div id="wrongFeedback"></div>
-  <div id="score">Score: 0</div>
-  <div id="dailyScore">Daily Score: 0</div>
-  <button id="backBtn">Back to Settings</button>
-</div>
+  <!-- Game Screen -->
+  <div id="gameScreen" class="screen">
+    <h2 id="question"></h2>
+    <input id="answer" readonly />
+    <div id="keypad"></div>
+    <p id="feedback"></p>
+    <p id="scoreDisplay"></p>
+    <button onclick="exitGame()">Exit Game</button>
+  </div>
 
-<div id="topScoresScreen" style="display:none;">
-  <h2>Top Scores Leaderboard</h2>
-  <div id="highScoresList"></div>
-  <button id="backToStartBtn">Back</button>
-</div>
+  <!-- Settings Screen -->
+  <div id="settingsScreen" class="screen">
+    <h2>Settings</h2>
+    <button onclick="backToLoad()">Back</button>
+  </div>
+
+  <!-- Top Scores Screen -->
+  <div id="scoresScreen" class="screen">
+    <h2>Top Scores</h2>
+    <div id="scoresList"></div>
+    <button onclick="backToLoad()">Back</button>
+  </div>
+
+  <!-- Avatar Screen -->
+  <div id="avatarScreen" class="screen">
+    <h2>Choose Your Avatar</h2>
+    <div id="avatarGrid">
+      <!-- Example placeholders (replace with your own images in /images/) -->
+      <img src="images/cat.png" onclick="selectAvatar('images/cat.png')" />
+      <img src="images/turtle.png" onclick="selectAvatar('images/turtle.png')" />
+      <img src="images/dragon.png" onclick="selectAvatar('images/dragon.png')" />
+      <img src="images/axolotl.png" onclick="selectAvatar('images/axolotl.png')" />
+      <img src="images/bunny.png" onclick="selectAvatar('images/bunny.png')" />
+      <img src="images/dog.png" onclick="selectAvatar('images/dog.png')" />
+    </div>
+    <br>
+    <button onclick="backToLoad()">Back</button>
+  </div>
 
 <script>
-let playerName = '', mode = 'addition', maxNumber = 20;
-let score = 0, dailyScore = 0, answer = 0, streak = 0, lastPlayDate = null;
+  let currentScreen = "loadScreen";
+  let currentUser = "";
+  let gameScore = 0;
+  let dailyScore = 0;
+  let streak = 0;
+  let lastPlayedDate = "";
 
-const startScreen = document.getElementById('startScreen');
-const gameScreen = document.getElementById('gameScreen');
-const topScoresScreen = document.getElementById('topScoresScreen');
-const questionEl = document.getElementById('question');
-const feedbackEl = document.getElementById('feedback');
-const wrongFeedbackEl = document.getElementById('wrongFeedback');
-const scoreEl = document.getElementById('score');
-const dailyScoreEl = document.getElementById('dailyScore');
-const answerInput = document.getElementById('answerInput');
-const streakInfo = document.getElementById('streakInfo');
-
-function getToday() { return new Date().toISOString().split('T')[0]; }
-
-function loadPlayerData() {
-  streak = Number(localStorage.getItem('streak_' + playerName) || 0);
-  lastPlayDate = localStorage.getItem('lastPlayDate_' + playerName);
-  const savedDailyDate = localStorage.getItem('dailyScoreDate_' + playerName);
-  if (savedDailyDate !== getToday()) {
-    dailyScore = 0;
-    localStorage.setItem('dailyScoreDate_' + playerName, getToday());
-  } else {
-    dailyScore = Number(localStorage.getItem('dailyScore_' + playerName) || 0);
+  function switchScreen(id) {
+    document.getElementById(currentScreen).classList.remove("active");
+    document.getElementById(id).classList.add("active");
+    currentScreen = id;
+    if (id === "loadScreen") updateLoadScreen();
   }
-}
 
-function savePlayerData() {
-  localStorage.setItem('streak_' + playerName, streak);
-  localStorage.setItem('lastPlayDate_' + playerName, lastPlayDate);
-  localStorage.setItem('dailyScore_' + playerName, dailyScore);
-  localStorage.setItem('dailyScoreDate_' + playerName, getToday());
-}
-
-function updateStreakInfo() {
-  if (!lastPlayDate || lastPlayDate < getToday()) {
-    if (lastPlayDate && lastPlayDate < getToday()) {
-      streakInfo.innerText = `😢 Sorry ${playerName}, you missed a day! Streak reset.`;
-      streak = 0;
-    } else { streakInfo.innerText = `Your current streak: ${streak} days`; }
-  } else { streakInfo.innerText = `Your current streak: ${streak} days`; }
-}
-
-document.getElementById('startBtn').addEventListener('click', () => {
-  const nameInput = document.getElementById('playerName').value.trim();
-  if (!nameInput) { alert("Enter your name!"); return; }
-  playerName = nameInput;
-  mode = document.getElementById('mode').value;
-  maxNumber = Number(document.getElementById('maxNumber').value);
-  if (isNaN(maxNumber) || maxNumber < 1) { alert("Enter a valid max number!"); return; }
-
-  score = 0;
-  scoreEl.innerText = `Score: ${score}`;
-  dailyScoreEl.innerText = `Daily Score: ${dailyScore}`;
-  feedbackEl.innerText = '';
-  wrongFeedbackEl.innerText = '';
-
-  loadPlayerData();
-  updateStreakInfo();
-
-  startScreen.style.display = 'none';
-  gameScreen.style.display = 'block';
-  generateQuestion();
-});
-
-document.getElementById('backBtn').addEventListener('click', () => {
-  gameScreen.style.display = 'none';
-  startScreen.style.display = 'block';
-  savePlayerData();
-});
-
-document.querySelectorAll('.numBtn').forEach(btn => btn.addEventListener('click', () => answerInput.value += btn.innerText));
-document.getElementById('clearBtn').addEventListener('click', () => answerInput.value = '');
-document.getElementById('submitBtn').addEventListener('click', checkAnswer);
-
-document.getElementById('topScoresBtn').addEventListener('click', () => {
-  startScreen.style.display = 'none';
-  gameScreen.style.display = 'none';
-  topScoresScreen.style.display = 'block';
-  displayTopScores();
-});
-document.getElementById('backToStartBtn').addEventListener('click', () => {
-  topScoresScreen.style.display = 'none';
-  startScreen.style.display = 'block';
-});
-
-function generateQuestion() {
-  answerInput.value = '';
-  answerInput.focus();
-  let num1 = Math.floor(Math.random() * (maxNumber + 1));
-  let num2 = Math.floor(Math.random() * (maxNumber + 1));
-  let op = '+';
-  if (mode === 'subtraction') op = '-';
-  else if (mode === 'mixed') op = Math.random() < 0.5 ? '+' : '-';
-
-  if (op === '-' && num1 < num2) [num1, num2] = [num2, num1];
-
-  answer = (op === '-') ? num1 - num2 : num1 + num2;
-  questionEl.innerText = `${playerName}, what is ${num1} ${op} ${num2}?`;
-  feedbackEl.innerText = '';
-  wrongFeedbackEl.innerText = '';
-}
-
-function checkAnswer() {
-  const input = answerInput.value.trim();
-  const userAnswer = Number(input);
-  if (input === '' || isNaN(userAnswer)) { alert("Enter a number!"); return; }
-
-  if (userAnswer === answer) {
-    score++;
-    dailyScore++;
-    scoreEl.innerText = `Score: ${score}`;
-    dailyScoreEl.innerText = `Daily Score: ${dailyScore}`;
-
-    const today = getToday();
-    if (lastPlayDate !== today) {
-      streak++;
-      lastPlayDate = today;
-      feedbackEl.innerText = `🎉 Awesome, ${playerName}, that is correct! Your streak is now ${streak} days!`;
-    } else { feedbackEl.innerText = `✅ Correct, ${playerName}!`; }
-
-    wrongFeedbackEl.innerText = '';
-    savePlayerData();
-    updateLeaderboard(playerName, dailyScore, streak);
-    setTimeout(generateQuestion, 2000);
-  } else {
-    wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
-    feedbackEl.innerText = '';
-    answerInput.value = '';
-    answerInput.focus();
+  function startGame() {
+    currentUser = document.getElementById("usernameInput").value.trim();
+    if (!currentUser) { alert("Enter a name first!"); return; }
+    gameScore = 0;
+    document.getElementById("scoreDisplay").textContent = "Score: 0";
+    generateQuestion();
+    switchScreen("gameScreen");
   }
-}
 
-// Multi-player Leaderboard
-function getLeaderboard() {
-  const data = localStorage.getItem('leaderboard');
-  return data ? JSON.parse(data) : [];
-}
-
-function saveLeaderboard(lb) { localStorage.setItem('leaderboard', JSON.stringify(lb)); }
-
-function updateLeaderboard(name, score, streakVal) {
-  let lb = getLeaderboard();
-  const idx = lb.findIndex(p => p.name === name);
-  if (idx >= 0) {
-    if (score > lb[idx].dailyScore) lb[idx].dailyScore = score;
-    if (streakVal > lb[idx].streak) lb[idx].streak = streakVal;
-  } else {
-    lb.push({ name, dailyScore: score, streak: streakVal });
+  function exitGame() {
+    saveScores();
+    switchScreen("loadScreen");
   }
-  lb.sort((a,b) => b.dailyScore - a.dailyScore || b.streak - a.streak);
-  saveLeaderboard(lb);
-}
 
-function displayTopScores() {
-  const lb = getLeaderboard();
-  if (!lb.length) { document.getElementById('highScoresList').innerHTML = '<p>No scores yet!</p>'; return; }
-  let html = '<ol>';
-  lb.forEach(p => html += `<li>${p.name} - Daily Score: ${p.dailyScore}, Streak: ${p.streak}</li>`);
-  html += '</ol>';
-  document.getElementById('highScoresList').innerHTML = html;
-}
+  function showSettings() { switchScreen("settingsScreen"); }
+  function showTopScores() { renderScores(); switchScreen("scoresScreen"); }
+  function showAvatarScreen() { switchScreen("avatarScreen"); }
+  function backToLoad() { switchScreen("loadScreen"); }
 
-// Reset daily score at midnight
-setInterval(() => {
-  const today = getToday();
-  let lb = getLeaderboard();
-  lb.forEach(p => {
-    const savedDate = localStorage.getItem('dailyScoreDate_' + p.name);
-    if (savedDate !== today) {
-      localStorage.setItem('dailyScore_' + p.name, 0);
-      localStorage.setItem('dailyScoreDate_' + p.name, today);
-      if (playerName === p.name) dailyScoreEl.innerText = 'Daily Score: 0';
+  // --- Question logic ---
+  function generateQuestion() {
+    let a = Math.floor(Math.random() * 10);
+    let b = Math.floor(Math.random() * 10);
+    document.getElementById("question").textContent = `${a} + ${b} = ?`;
+    document.getElementById("answer").value = "";
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("answer").dataset.correct = a + b;
+  }
+
+  function checkAnswer() {
+    let input = document.getElementById("answer").value;
+    let correct = document.getElementById("answer").dataset.correct;
+    if (parseInt(input) === parseInt(correct)) {
+      gameScore++;
+      dailyScore++;
+      document.getElementById("feedback").textContent = `✅ Correct, ${currentUser}!`;
+      document.getElementById("scoreDisplay").textContent = `Score: ${gameScore}`;
+      saveScores();
+      setTimeout(generateQuestion, 2000);
+    } else {
+      document.getElementById("feedback").textContent = "❌ Try again!";
     }
-  });
-}, 60000);
-</script>
+  }
 
+  // --- Keypad ---
+  function buildKeypad() {
+    const keys = ["1","2","3","4","5","6","7","8","9","0","Clear","Submit"];
+    let html = "";
+    keys.forEach(k => {
+      if (k === "Clear") {
+        html += `<button onclick="document.getElementById('answer').value=''">Clear</button>`;
+      } else if (k === "Submit") {
+        html += `<button onclick="checkAnswer()">Submit</button>`;
+      } else {
+        html += `<button onclick="document.getElementById('answer').value+= '${k}'">${k}</button>`;
+      }
+    });
+    document.getElementById("keypad").innerHTML = html;
+  }
+  buildKeypad();
+
+  // --- Avatar Selection ---
+  function selectAvatar(path) {
+    if (!currentUser) currentUser = document.getElementById("usernameInput").value.trim();
+    if (!currentUser) { alert("Enter your name first!"); return; }
+    localStorage.setItem(currentUser + "_avatar", path);
+    updateLoadScreen();
+    alert("Avatar selected!");
+    switchScreen("loadScreen");
+  }
+
+  function updateLoadScreen() {
+    let avatar = localStorage.getItem(currentUser + "_avatar");
+    if (avatar) {
+      document.getElementById("avatarDisplay").innerHTML = `<img src="${avatar}" class="avatar-small">`;
+    } else {
+      document.getElementById("avatarDisplay").innerHTML = "";
+    }
+    document.getElementById("streakInfo").textContent = `Streak: ${localStorage.getItem(currentUser + "_streak") || 0}`;
+    document.getElementById("dailyScoreInfo").textContent = `Daily Score: ${localStorage.getItem(currentUser + "_dailyScore") || 0}`;
+  }
+
+  // --- Scores ---
+  function saveScores() {
+    let today = new Date().toLocaleDateString();
+    let lastDate = localStorage.getItem(currentUser + "_lastDate");
+    if (lastDate !== today) {
+      localStorage.setItem(currentUser + "_dailyScore", 0);
+    }
+    localStorage.setItem(currentUser + "_score", gameScore);
+    localStorage.setItem(currentUser + "_dailyScore", dailyScore);
+    localStorage.setItem(currentUser + "_lastDate", today);
+  }
+
+  function renderScores() {
+    let container = document.getElementById("scoresList");
+    container.innerHTML = "";
+    for (let i = 0; i < localStorage.length; i++) {
+      let key = localStorage.key(i);
+      if (key.endsWith("_score")) {
+        let user = key.replace("_score","");
+        let avatar = localStorage.getItem(user + "_avatar");
+        let score = localStorage.getItem(user + "_score") || 0;
+        let daily = localStorage.getItem(user + "_dailyScore") || 0;
+        let streak = localStorage.getItem(user + "_streak") || 0;
+        container.innerHTML += `
+          <p>
+            ${avatar ? `<img src="${avatar}" class="avatar-small">` : ""} 
+            <b>${user}</b> - Score: ${score}, Daily: ${daily}, Streak: ${streak}
+          </p>`;
+      }
+    }
+  }
+</script>
 </body>
 </html>
