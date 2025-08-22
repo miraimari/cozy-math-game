@@ -29,6 +29,7 @@ button { margin: 10px; padding: 10px 20px; font-size: 18px; }
 <button onclick="clearAll()">Clear All</button>
 <button onclick="recognizeAll()">Read</button>
 <button onclick="submitAll()">Submit</button>
+<button onclick="startReview()">Review Missed Questions</button>
 
 <h3 id="recognized">I read: …</h3>
 <h3 id="feedback"></h3>
@@ -49,6 +50,13 @@ let streak = 0, xp = 0, level = 1;
 let currentAnswer = 0;
 let recognizedDigits = [];
 let badgesEarned = [];
+let firstAttemptWrong = false;
+
+// Review mode state
+let reviewMode = false;
+let reviewQuestions = [];
+let reviewIndex = 0;
+
 const digitBoxesContainer = document.getElementById("digitBoxes");
 
 // Daily streak
@@ -57,7 +65,7 @@ function updateDailyStreak() {
   const lastPlayed = localStorage.getItem("lastPlayed");
   let dailyStreak = parseInt(localStorage.getItem("dailyStreak")) || 0;
 
-  if(lastPlayed) {
+  if(lastPlayed){
     const lastDate = new Date(lastPlayed);
     const diffDays = Math.floor((new Date(today) - lastDate) / (1000*60*60*24));
     if(diffDays === 1) dailyStreak++;
@@ -93,10 +101,13 @@ function checkLevelUp() {
 
 // Difficulty
 function getDifficulty() {
-  return Math.min(level-1, 5); // scales with level
+  return Math.min(level-1, 5);
 }
 
+// Question generation
 function newQuestion() {
+  if(reviewMode) return loadReviewQuestion();
+
   const grade = getDifficulty();
   let maxNum = 10;
   let operations = ["+", "-"];
@@ -111,13 +122,14 @@ function newQuestion() {
   if(op === "-" && b > a) [a,b]=[b,a];
 
   currentAnswer = op === "+" ? a+b : op === "-" ? a-b : a*b;
-
   document.getElementById("question").innerText = `${a} ${op} ${b} = ?`;
   recognizedDigits = [];
+  firstAttemptWrong = false;
   createDigitBoxes(currentAnswer.toString().length);
   document.getElementById("feedback").innerText = "";
 }
 
+// Digit input canvases
 function createDigitBoxes(count) {
   digitBoxesContainer.innerHTML = "";
   for(let i=0;i<count;i++){
@@ -135,8 +147,8 @@ function initCanvas(c){
   let drawing = false;
   c.addEventListener("pointerdown", e=>{drawing=true;draw(e,c,ctx);});
   c.addEventListener("pointermove", e=>{if(drawing) draw(e,c,ctx);});
-  c.addEventListener("pointerup", ()=>drawing=false);
-  c.addEventListener("pointerleave", ()=>drawing=false);
+  c.addEventListener("pointerup", ()=>{drawing=false; ctx.beginPath();});
+  c.addEventListener("pointerleave", ()=>{drawing=false; ctx.beginPath();});
 }
 
 function draw(e,c,ctx){
@@ -153,6 +165,7 @@ function clearAll(){
   document.getElementById("recognized").innerText="I read: …";
 }
 
+// Handwriting recognition
 async function recognizeAll(){
   recognizedDigits=[];
   const canvases = document.querySelectorAll("canvas");
@@ -168,29 +181,87 @@ async function recognizeAll(){
   document.getElementById("recognized").innerText="I read: "+recognizedDigits.join("");
 }
 
+// Missed questions storage
+function addMissedQuestion(q, ans){
+  let missed = JSON.parse(localStorage.getItem("missedQuestions") || "[]");
+  if(!missed.some(item => item.question===q)) {
+    missed.push({question: q, answer: ans});
+    localStorage.setItem("missedQuestions", JSON.stringify(missed));
+  }
+}
+function removeFromMissed(q){
+  let missed = JSON.parse(localStorage.getItem("missedQuestions") || "[]");
+  missed = missed.filter(item => item.question !== q);
+  localStorage.setItem("missedQuestions", JSON.stringify(missed));
+}
+
+// Submit answer
 function submitAll(){
   recognizeAll().then(()=>{
     let guess = parseInt(recognizedDigits.join(""));
+    
+    if(reviewMode){
+      if(guess===currentAnswer){
+        removeFromMissed(document.getElementById("question").innerText);
+        reviewIndex++;
+        loadReviewQuestion();
+      } else {
+        document.getElementById("feedback").innerText="❌ Try again!";
+      }
+      return;
+    }
+    
+    // Normal mode with retry until correct
     if(guess===currentAnswer){
+      if(firstAttemptWrong){
+        addMissedQuestion(document.getElementById("question").innerText, currentAnswer);
+        firstAttemptWrong = false;
+      }
       streak++; xp+=5;
       document.getElementById("feedback").innerText="✅ Correct!";
+      document.getElementById("streak").innerText="Streak: "+streak;
+      document.getElementById("xp").innerText="XP: "+xp;
 
-      // badges
+      // Example badges
       if(streak===3) showBadge("First Streak! 🔥");
       if(currentAnswer>10) showBadge("Math Master! 🏆");
       if(document.getElementById("question").innerText.includes("*")) showBadge("Multiplication Pro! ✨");
 
-    }else{
-      streak=0; xp=Math.max(0,xp-1);
+      checkLevelUp();
+      newQuestion();
+    } else {
       document.getElementById("feedback").innerText="❌ Try again!";
+      firstAttemptWrong = true;
     }
-
-    document.getElementById("streak").innerText="Streak: "+streak;
-    document.getElementById("xp").innerText="XP: "+xp;
-
-    checkLevelUp();
-    newQuestion();
   });
+}
+
+// Review mode
+function startReview(){
+  reviewQuestions = JSON.parse(localStorage.getItem("missedQuestions") || "[]");
+  if(reviewQuestions.length === 0){
+    alert("No missed questions to review!");
+    return;
+  }
+  reviewMode = true;
+  reviewIndex = 0;
+  loadReviewQuestion();
+}
+
+function loadReviewQuestion(){
+  if(reviewIndex >= reviewQuestions.length){
+    alert("Review complete! 🎉");
+    reviewMode = false;
+    newQuestion();
+    return;
+  }
+  let q = reviewQuestions[reviewIndex];
+  currentAnswer = q.answer;
+  document.getElementById("question").innerText = q.question + " = ?";
+  recognizedDigits = [];
+  firstAttemptWrong = false;
+  createDigitBoxes(currentAnswer.toString().length);
+  document.getElementById("feedback").innerText = "";
 }
 </script>
 </body>
