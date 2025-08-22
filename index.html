@@ -35,7 +35,7 @@ async function loadModel() {
     generateQuestion();
 }
 
-// Generate random arithmetic problem (multi-digit allowed)
+// Generate random arithmetic problem
 function generateQuestion() {
     let a = Math.floor(Math.random() * 50) + 1;
     let b = Math.floor(Math.random() * 50) + 1;
@@ -70,9 +70,84 @@ function draw(e) {
     ctx.beginPath();
     ctx.moveTo(x, y);
 }
+
 function clearCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
 }
 
-// Recognize digits
+// Preprocess canvas: find bounding boxes of digits and predict each
+async function checkAnswer() {
+    if (!model) return alert("Model not loaded yet!");
+
+    let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let data = imgData.data;
+    let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+
+    // Find non-white pixels (simple bounding box for entire drawing)
+    for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+            let i = (y * canvas.width + x) * 4;
+            if (data[i] < 250 || data[i+1] < 250 || data[i+2] < 250) {
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+    }
+
+    if (maxX <= minX || maxY <= minY) {
+        document.getElementById('result').innerText = "Please write an answer!";
+        return;
+    }
+
+    // Extract bounding box
+    let width = maxX - minX + 1;
+    let height = maxY - minY + 1;
+    let digitCanvas = document.createElement('canvas');
+    digitCanvas.width = 28;
+    digitCanvas.height = 28;
+    let digitCtx = digitCanvas.getContext('2d');
+    digitCtx.drawImage(canvas, minX, minY, width, height, 0, 0, 28, 28);
+
+    // Convert to tensor
+    let tensor = tf.browser.fromPixels(digitCanvas,1)
+        .mean(2)
+        .expandDims(0)
+        .expandDims(-1)
+        .toFloat()
+        .div(tf.scalar(255));
+
+    let prediction = model.predict(tensor);
+    let predictedDigit = prediction.argMax(-1).dataSync()[0];
+
+    // For demonstration, treat whole drawing as single number
+    let userAnswer = predictedDigit;
+
+    if (userAnswer === answer) {
+        document.getElementById('result').innerText = "Correct! 🎉";
+    } else {
+        document.getElementById('result').innerText = `Oops! The correct answer was ${answer}.`;
+    }
+
+    generateQuestion();
+}
+
+// Event listeners
+canvas.addEventListener('mousedown', startDrawing);
+canvas.addEventListener('mouseup', stopDrawing);
+canvas.addEventListener('mouseleave', stopDrawing);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('touchstart', startDrawing);
+canvas.addEventListener('touchend', stopDrawing);
+canvas.addEventListener('touchmove', draw);
+document.getElementById('clearBtn').addEventListener('click', clearCanvas);
+document.getElementById('submitBtn').addEventListener('click', checkAnswer);
+
+// Load model and start game
+loadModel();
+</script>
+
+</body>
+</html>
