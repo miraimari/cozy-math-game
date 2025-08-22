@@ -18,33 +18,29 @@
   #startScreen, #gameScreen {
     display: block;
   }
- #keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-  justify-items: center;
-  margin-top: 10px;
-}
-#keypad button {
-  width: 60px;
-  height: 50px;
-  font-size: 20px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-  @media (max-width: 400px) {
-    #keypad button {
-      width: 65px;
-      height: 55px;
-      font-size: 20px;
-      min-width: 65px;
-      min-height: 55px;
-    }
+  #keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    justify-items: center;
+    margin-top: 10px;
+  }
+  #keypad button {
+    width: 60px;
+    height: 50px;
+    font-size: 20px;
+    border-radius: 8px;
+    cursor: pointer;
   }
   #feedback {
     margin-top: 15px;
     font-size: 20px;
     min-height: 24px;
+  }
+  #answerInput {
+    font-size: 24px;
+    width: 100px;
+    text-align: center;
   }
 </style>
 </head>
@@ -66,7 +62,7 @@
 
 <div id="gameScreen" class="screen">
   <h2 id="questionText"></h2>
-  <input type="text" id="answerInput" readonly style="font-size:24px; width:100px; text-align:center;">
+  <input type="text" id="answerInput" readonly>
   
   <div id="keypad">
     <div>
@@ -174,4 +170,3 @@ submitBtn.addEventListener('click', checkAnswer);
 
 </body>
 </html>
-
