@@ -1,64 +1,87 @@
-<!-- Avatar Selection Screen -->
+<!-- Load Screen -->
+<div id="load-screen">
+  <h1>Cozy Math Game</h1>
+  <input type="text" id="username-input" placeholder="Enter your name">
+  <button onclick="startGame()">Start Game</button>
+  <button onclick="showTopScores()">Top Scores</button>
+  <button onclick="showAvatarScreen()">Avatar</button>
+</div>
+
+<!-- Game Screen -->
+<div id="game-screen" style="display:none;">
+  <!-- game elements here -->
+  <button onclick="backToLoad()">Back</button>
+</div>
+
+<!-- Avatar Screen -->
 <div id="avatar-screen" style="display:none;">
   <h2>Choose Your Avatar</h2>
-  <div id="avatar-selection" style="display:flex; gap:20px;">
-    <img id="avatar1" src="" alt="Avatar 1" onclick="selectAvatar(0)" style="width:100px; cursor:pointer; border:3px solid transparent;">
-    <img id="avatar2" src="" alt="Avatar 2" onclick="selectAvatar(1)" style="width:100px; cursor:pointer; border:3px solid transparent;">
-    <img id="avatar3" src="" alt="Avatar 3" onclick="selectAvatar(2)" style="width:100px; cursor:pointer; border:3px solid transparent;">
+  <div id="avatar-selection" style="display:flex; gap:10px;">
+    <img id="avatar1" src="" onclick="selectAvatar(0)" style="width:100px; cursor:pointer; border:3px solid transparent;">
+    <img id="avatar2" src="" onclick="selectAvatar(1)" style="width:100px; cursor:pointer; border:3px solid transparent;">
+    <img id="avatar3" src="" onclick="selectAvatar(2)" style="width:100px; cursor:pointer; border:3px solid transparent;">
   </div>
   <button onclick="backToLoad()">Back</button>
 </div>
 
+<!-- Top Scores Screen -->
+<div id="top-scores-screen" style="display:none;">
+  <h2>Top Scores</h2>
+  <ul id="top-scores-list"></ul>
+  <button onclick="backToLoad()">Back</button>
+</div>
+
 <script>
-const avatarUrls = [
-  "https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar1.jpg",
-  "https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar2.jpg",
-  "https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar3.jpg"
-];
+let currentUsername = "";
 
-// Populate images
-avatarUrls.forEach((url, index) => {
-  document.getElementById(`avatar${index + 1}`).src = url;
-});
-
-// Load previously selected avatar
-function loadAvatar(username) {
-  const avatarIndex = localStorage.getItem(`${username}-avatar`);
-  if (avatarIndex !== null) {
-    return avatarUrls[avatarIndex];
-  }
-  return avatarUrls[0]; // default avatar
+// Screen navigation helpers
+function hideAllScreens() {
+  document.getElementById("load-screen").style.display = "none";
+  document.getElementById("game-screen").style.display = "none";
+  document.getElementById("avatar-screen").style.display = "none";
+  document.getElementById("top-scores-screen").style.display = "none";
 }
 
-// Select avatar function
-function selectAvatar(index) {
-  if (!currentUsername) {
-    alert("Please enter your name first.");
+function backToLoad() {
+  hideAllScreens();
+  document.getElementById("load-screen").style.display = "block";
+}
+
+// Start game
+function startGame() {
+  const input = document.getElementById("username-input").value.trim();
+  if (!input) {
+    alert("Please enter your name!");
     return;
   }
-  localStorage.setItem(`${currentUsername}-avatar`, index);
-  
-  // Highlight selection
-  avatarUrls.forEach((_, i) => {
-    document.getElementById(`avatar${i + 1}`).style.border = i === index ? "3px solid green" : "3px solid transparent";
-  });
+  currentUsername = input;
+  hideAllScreens();
+  document.getElementById("game-screen").style.display = "block";
+  // initialize game here
 }
 
-// Show avatar screen
+// Show Avatar selection
 function showAvatarScreen() {
-  document.getElementById("load-screen").style.display = "none";
+  hideAllScreens();
   document.getElementById("avatar-screen").style.display = "block";
-
-  // Highlight previously selected avatar if any
-  const avatarIndex = localStorage.getItem(`${currentUsername}-avatar`);
-  avatarUrls.forEach((_, i) => {
-    document.getElementById(`avatar${i + 1}`).style.border = i == avatarIndex ? "3px solid green" : "3px solid transparent";
-  });
 }
 
-// Go back to load screen
-function backToLoad() {
-  document.getElementById("avatar-screen").style.display = "none";
-  document.getElementById("load-screen").style.display = "block";
+// Show Top Scores
+function showTopScores() {
+  hideAllScreens();
+  document.getElementById("top-scores-screen").style.display = "block";
+  renderTopScores();
+}
+
+// Example function to render top scores
+function renderTopScores() {
+  const list = document.getElementById("top-scores-list");
+  list.innerHTML = "";
+  const topScores = JSON.parse(localStorage.getItem("topScores") || "[]");
+  topScores.forEach(entry => {
+    const li = document.createElement("li");
+    li.textContent = `${entry.name}: ${entry.score}`;
+    list.appendChild(li);
+  });
 }
 </script>
