@@ -33,7 +33,7 @@
   #feedback { color: green; }
   #wrongFeedback { color: red; }
 
-  #score {
+  #score, #streakDisplay, #streakMessage {
     font-size: 18px;
     margin-top: 10px;
   }
@@ -41,13 +41,13 @@
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 2px; /* very small gap */
+    gap: 2px;
     justify-items: center;
     margin-top: 10px;
   }
 
   #keypad button {
-    width: 70px;
+    width: 80px;
     height: 60px;
     font-size: 22px;
     border-radius: 8px;
@@ -64,7 +64,7 @@
   @media (max-width: 400px) {
     #question { font-size: 20px; }
     #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 60px; height: 50px; font-size: 20px; }
+    #keypad button { width: 70px; height: 55px; font-size: 20px; }
   }
 </style>
 </head>
@@ -73,7 +73,6 @@
 <h1>Cozy Math Game</h1>
 
 <div id="startScreen">
-  <div id="streakMessage" style="font-size:16px; color:purple; margin-bottom:10px;"></div>
   <input type="text" id="playerName" placeholder="Enter your name"><br>
   <select id="mode">
     <option value="addition">Addition only</option>
@@ -81,7 +80,8 @@
     <option value="mixed">Mixed</option>
   </select><br>
   <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
-  <div id="streakDisplay" style="margin:5px 0; font-weight:bold;"></div>
+  <div id="streakMessage"></div>
+  <div id="streakDisplay"></div>
   <button id="startBtn">Start Game</button>
 </div>
 
@@ -116,6 +116,7 @@ let mode = 'addition';
 let maxNumber = 20;
 let score = 0;
 let answer = 0;
+let streak = 0;
 
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
@@ -127,31 +128,20 @@ const answerInput = document.getElementById('answerInput');
 const streakDisplay = document.getElementById('streakDisplay');
 const streakMessage = document.getElementById('streakMessage');
 
-function loadStreak() {
-  let streak = Number(localStorage.getItem('streak') || 0);
-  let lastDate = localStorage.getItem('lastDate');
-  const today = new Date().toISOString().split('T')[0];
+// Load streak info from localStorage
+let savedStreak = Number(localStorage.getItem('streak')) || 0;
+let lastDate = localStorage.getItem('lastDate') || '';
+const today = new Date().toISOString().split('T')[0];
 
-  if (lastDate && lastDate !== today) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yestStr = yesterday.toISOString().split('T')[0];
-
-    if (lastDate !== yestStr) {
-      streak = 0;
-      streakMessage.innerText = "😔 Oh no! You missed a day and your streak was reset.";
-    } else {
-      streakMessage.innerText = '';
-    }
-  } else {
-    streakMessage.innerText = '';
+if (lastDate !== today) {
+  if (savedStreak > 0 && lastDate !== '') {
+    streakMessage.innerText = "😢 You missed a day, streak reset!";
   }
-
-  streakDisplay.innerText = `Current Streak: ${streak}`;
-  return streak;
+  streak = 0;
+} else {
+  streak = savedStreak;
 }
-
-let streak = loadStreak();
+streakDisplay.innerText = `Current Streak: ${streak}`;
 
 document.getElementById('startBtn').addEventListener('click', () => {
   const nameInput = document.getElementById('playerName').value.trim();
@@ -165,7 +155,6 @@ document.getElementById('startBtn').addEventListener('click', () => {
   scoreEl.innerText = `Score: ${score}`;
   feedbackEl.innerText = '';
   wrongFeedbackEl.innerText = '';
-  streakMessage.innerText = '';
 
   startScreen.style.display = 'none';
   gameScreen.style.display = 'block';
@@ -175,7 +164,6 @@ document.getElementById('startBtn').addEventListener('click', () => {
 document.getElementById('backBtn').addEventListener('click', () => {
   gameScreen.style.display = 'none';
   startScreen.style.display = 'block';
-  streak = loadStreak();
 });
 
 document.querySelectorAll('.numBtn').forEach(btn => {
@@ -220,15 +208,15 @@ function checkAnswer() {
   if (userAnswer === answer) {
     score++;
     scoreEl.innerText = `Score: ${score}`;
-    feedbackEl.innerText = `✅ Correct, ${playerName}!`;
     wrongFeedbackEl.innerText = '';
 
-    // increment streak here only after correct answer
+    // Update streak only after correct answer
     streak++;
     streakDisplay.innerText = `Current Streak: ${streak}`;
-    const today = new Date().toISOString().split('T')[0];
     localStorage.setItem('streak', streak);
     localStorage.setItem('lastDate', today);
+
+    feedbackEl.innerText = `🎉 Great job, ${playerName}! Your streak is now ${streak} day${streak>1?'s':''}!`;
 
     setTimeout(generateQuestion, 2000); // 2-second delay
   } else {
