@@ -38,23 +38,17 @@
     margin-top: 10px;
   }
 
-  #streakMessage {
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: darkorange;
-  }
-
   #keypad {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 1px;  /* very small gap */
+    gap: 2px; /* very small gap */
     justify-items: center;
     margin-top: 10px;
   }
 
   #keypad button {
-    width: 80px;   /* bigger buttons */
-    height: 70px;
+    width: 70px;
+    height: 60px;
     font-size: 22px;
     border-radius: 8px;
     cursor: pointer;
@@ -70,7 +64,7 @@
   @media (max-width: 400px) {
     #question { font-size: 20px; }
     #answerInput { font-size: 18px; width: 80%; }
-    #keypad button { width: 65px; height: 55px; font-size: 20px; }
+    #keypad button { width: 60px; height: 50px; font-size: 20px; }
   }
 </style>
 </head>
@@ -79,7 +73,7 @@
 <h1>Cozy Math Game</h1>
 
 <div id="startScreen">
-  <div id="streakMessage"></div>
+  <div id="streakMessage" style="font-size:16px; color:purple; margin-bottom:10px;"></div>
   <input type="text" id="playerName" placeholder="Enter your name"><br>
   <select id="mode">
     <option value="addition">Addition only</option>
@@ -87,6 +81,7 @@
     <option value="mixed">Mixed</option>
   </select><br>
   <input type="number" id="maxNumber" value="20" min="1" placeholder="Max number for each number"><br>
+  <div id="streakDisplay" style="margin:5px 0; font-weight:bold;"></div>
   <button id="startBtn">Start Game</button>
 </div>
 
@@ -121,7 +116,6 @@ let mode = 'addition';
 let maxNumber = 20;
 let score = 0;
 let answer = 0;
-let streak = 0;
 
 const startScreen = document.getElementById('startScreen');
 const gameScreen = document.getElementById('gameScreen');
@@ -130,31 +124,34 @@ const feedbackEl = document.getElementById('feedback');
 const wrongFeedbackEl = document.getElementById('wrongFeedback');
 const scoreEl = document.getElementById('score');
 const answerInput = document.getElementById('answerInput');
-const streakMessageEl = document.getElementById('streakMessage');
+const streakDisplay = document.getElementById('streakDisplay');
+const streakMessage = document.getElementById('streakMessage');
 
-// Load streak from localStorage
 function loadStreak() {
-  const lastPlay = localStorage.getItem('lastPlay');
-  const savedStreak = Number(localStorage.getItem('streak')) || 0;
-  const today = new Date().toDateString();
+  let streak = Number(localStorage.getItem('streak') || 0);
+  let lastDate = localStorage.getItem('lastDate');
+  const today = new Date().toISOString().split('T')[0];
 
-  if (lastPlay === today) {
-    streak = savedStreak;
-  } else if (lastPlay === new Date(Date.now() - 86400000).toDateString()) {
-    // yesterday played
-    streak = savedStreak;
-  } else if (savedStreak > 0) {
-    streak = 0;
-    streakMessageEl.innerText = "😔 Oh no! You missed a day and your streak was reset.";
+  if (lastDate && lastDate !== today) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yestStr = yesterday.toISOString().split('T')[0];
+
+    if (lastDate !== yestStr) {
+      streak = 0;
+      streakMessage.innerText = "😔 Oh no! You missed a day and your streak was reset.";
+    } else {
+      streakMessage.innerText = '';
+    }
+  } else {
+    streakMessage.innerText = '';
   }
-  document.getElementById('playerName').placeholder = `Enter your name (Current streak: ${streak})`;
+
+  streakDisplay.innerText = `Current Streak: ${streak}`;
+  return streak;
 }
 
-// Save streak to localStorage
-function saveStreak() {
-  localStorage.setItem('streak', streak);
-  localStorage.setItem('lastPlay', new Date().toDateString());
-}
+let streak = loadStreak();
 
 document.getElementById('startBtn').addEventListener('click', () => {
   const nameInput = document.getElementById('playerName').value.trim();
@@ -168,7 +165,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
   scoreEl.innerText = `Score: ${score}`;
   feedbackEl.innerText = '';
   wrongFeedbackEl.innerText = '';
-  streakMessageEl.innerText = '';
+  streakMessage.innerText = '';
 
   startScreen.style.display = 'none';
   gameScreen.style.display = 'block';
@@ -178,7 +175,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 document.getElementById('backBtn').addEventListener('click', () => {
   gameScreen.style.display = 'none';
   startScreen.style.display = 'block';
-  loadStreak();
+  streak = loadStreak();
 });
 
 document.querySelectorAll('.numBtn').forEach(btn => {
@@ -225,8 +222,14 @@ function checkAnswer() {
     scoreEl.innerText = `Score: ${score}`;
     feedbackEl.innerText = `✅ Correct, ${playerName}!`;
     wrongFeedbackEl.innerText = '';
+
+    // increment streak here only after correct answer
     streak++;
-    saveStreak();
+    streakDisplay.innerText = `Current Streak: ${streak}`;
+    const today = new Date().toISOString().split('T')[0];
+    localStorage.setItem('streak', streak);
+    localStorage.setItem('lastDate', today);
+
     setTimeout(generateQuestion, 2000); // 2-second delay
   } else {
     wrongFeedbackEl.innerText = `❌ Wrong, ${playerName}! Try again.`;
@@ -235,9 +238,6 @@ function checkAnswer() {
     answerInput.focus();
   }
 }
-
-// Initialize streak message on load
-loadStreak();
 </script>
 
 </body>
