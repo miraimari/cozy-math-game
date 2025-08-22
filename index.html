@@ -22,6 +22,11 @@
     <option value="mixed">Mixed</option>
 </select>
 
+<br>
+
+<label for="maxNumber">Max number: </label>
+<input type="number" id="maxNumber" value="20" min="1">
+
 <div id="question" style="margin-top: 20px; font-size: 20px;"></div>
 <input type="text" id="answerInput" placeholder="Your answer">
 <br>
@@ -38,16 +43,18 @@ let score = 0;
 // Generate a new math problem
 function generateQuestion() {
     const mode = document.getElementById('mode').value;
+    let max = parseInt(document.getElementById('maxNumber').value);
+    if (isNaN(max) || max < 1) max = 20;
 
-    let a = Math.floor(Math.random() * 20) + 1; // 1 to 20
-    let b = Math.floor(Math.random() * 20) + 1; // 1 to 20
+    let a = Math.floor(Math.random() * max) + 1; 
+    let b = Math.floor(Math.random() * max) + 1; 
     let operation = '+';
 
     if (mode === 'addition') {
         operation = '+';
         answer = a + b;
     } else if (mode === 'subtraction') {
-        if (a < b) [a, b] = [b, a]; // ensure non-negative
+        if (a < b) [a, b] = [b, a]; 
         operation = '-';
         answer = a - b;
     } else { // mixed
@@ -99,6 +106,7 @@ document.getElementById('answerInput').addEventListener('keydown', function(e){
     if (e.key === 'Enter') checkAnswer();
 });
 document.getElementById('mode').addEventListener('change', generateQuestion);
+document.getElementById('maxNumber').addEventListener('change', generateQuestion);
 
 // Start first question
 generateQuestion();
