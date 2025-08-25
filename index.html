@@ -1,286 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cozy Math Game</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #ffe4e1;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-  }
-  h1, h2 {
-    color: #d6336c;
-  }
-  .screen {
-    display: none;
-    padding: 20px;
-  }
-  button {
-    padding: 10px 20px;
-    margin: 5px;
-    font-size: 18px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  #keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    justify-items: center;
-    margin-top: 10px;
-  }
-  #keypad button {
-    width: 80px;
-    height: 70px;
-    font-size: 24px;
-    border-radius: 10px;
-    cursor: pointer;
-  }
-  #feedback {
-    margin-top: 10px;
-    font-size: 20px;
-    min-height: 28px;
-  }
-  img.avatar {
-    width: 100px;
-    height: 100px;
-    cursor: pointer;
-    border-radius: 10px;
-    margin: 5px;
-    border: 3px solid transparent;
-  }
-  img.avatar.selected {
-    border-color: #d6336c;
-  }
-  .top-score-item {
-    margin: 5px 0;
-    font-size: 18px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>Cozy Math Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: pink;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+    .screen { display: none; padding: 20px; }
+    .active { display: block; }
+    button {
+      margin: 5px;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: none;
+      background: #f1f1f1;
+      cursor: pointer;
+    }
+    #avatarPreview img {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+    }
+    .avatar-option {
+      width: 80px;
+      height: 80px;
+      margin: 10px;
+      border: 3px solid transparent;
+      cursor: pointer;
+    }
+    .avatar-option.selected {
+      border-color: #333;
+    }
+    table {
+      margin: 0 auto;
+      border-collapse: collapse;
+      width: 80%;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 8px;
+    }
+  </style>
 </head>
 <body>
 
-<!-- Load Screen -->
-<div id="loadScreen" class="screen">
-  <h1>Cozy Math Game</h1>
-  <input type="text" id="playerName" placeholder="Enter your name"><br><br>
-  <label>Choose mode:</label>
-  <select id="modeSelect">
-    <option value="addition">Addition</option>
-    <option value="subtraction">Subtraction</option>
-    <option value="mixed">Mixed</option>
-  </select><br><br>
-  <label>Max number:</label>
-  <input type="number" id="maxNumber" value="20" min="1" max="50"><br><br>
-  <button onclick="startGame()">Start Game</button>
-  <button onclick="showTopScores()">Top Scores</button>
-  <button onclick="showAvatarScreen()">Avatar</button>
-  <p id="streakDisplay"></p>
-  <p id="dailyScoreDisplay"></p>
-</div>
-
-<!-- Avatar Screen -->
-<div id="avatarScreen" class="screen">
-  <h2>Select Avatar</h2>
-  <div>
-    <img src="https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar1.jpg" class="avatar" onclick="selectAvatar(this)">
-    <img src="https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar2.jpg" class="avatar" onclick="selectAvatar(this)">
-    <img src="https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar3.jpg" class="avatar" onclick="selectAvatar(this)">
+  <!-- LOAD SCREEN -->
+  <div id="loadScreen" class="screen active">
+    <h1>🎀 Cozy Math Game 🎀</h1>
+    <input type="text" id="playerName" placeholder="Enter your name">
+    <div id="streakInfo"></div>
+    <div id="avatarPreview"></div>
+    <button onclick="startGame()">Start Game</button>
+    <button onclick="showScreen('avatarScreen')">Select Avatar</button>
+    <button onclick="showScreen('topScoresScreen')">Top Scores</button>
   </div>
-  <button onclick="backToLoad()">Back</button>
-</div>
 
-<!-- Game Screen -->
-<div id="gameScreen" class="screen">
-  <h2 id="question"></h2>
-  <input type="text" id="answerInput" readonly style="font-size:24px; width:120px;"><br>
-  <div id="keypad">
-    <button onclick="pressKey('1')">1</button>
-    <button onclick="pressKey('2')">2</button>
-    <button onclick="pressKey('3')">3</button>
-    <button onclick="pressKey('4')">4</button>
-    <button onclick="pressKey('5')">5</button>
-    <button onclick="pressKey('6')">6</button>
-    <button onclick="pressKey('7')">7</button>
-    <button onclick="pressKey('8')">8</button>
-    <button onclick="pressKey('9')">9</button>
-    <button onclick="pressKey('0')">0</button>
-    <button onclick="clearInput()">Clear</button>
-    <button onclick="submitAnswer()">Submit</button>
+  <!-- GAME SCREEN -->
+  <div id="gameScreen" class="screen">
+    <h2 id="greeting"></h2>
+    <div id="gameAvatar"></div>
+    <p id="equation"></p>
+    <input type="text" id="answer" placeholder="Your answer">
+    <div>
+      <button onclick="checkAnswer()">Submit</button>
+      <button onclick="exitGame()">Exit Game</button>
+    </div>
+    <p id="feedback"></p>
+    <p>Game Score: <span id="gameScore">0</span></p>
+    <p>Daily Score: <span id="dailyScore">0</span></p>
+    <p>Streak: <span id="streakCount">0</span> days</p>
   </div>
-  <div id="feedback"></div>
-  <button onclick="backToLoad()">Back to Settings</button>
-</div>
 
-<!-- Top Scores Screen -->
-<div id="topScoresScreen" class="screen">
-  <h2>Top Scores</h2>
-  <div id="topScoresList"></div>
-  <button onclick="backToLoad()">Back</button>
-</div>
+  <!-- AVATAR SCREEN -->
+  <div id="avatarScreen" class="screen">
+    <h2>Select Your Avatar</h2>
+    <div id="avatarChoices"></div>
+    <button onclick="showScreen('loadScreen')">Back</button>
+  </div>
+
+  <!-- TOP SCORES SCREEN -->
+  <div id="topScoresScreen" class="screen">
+    <h2>🏆 Top Scores 🏆</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>High Score</th>
+          <th>Highest Streak</th>
+        </tr>
+      </thead>
+      <tbody id="scoresTable"></tbody>
+    </table>
+    <button onclick="showScreen('loadScreen')">Back</button>
+  </div>
 
 <script>
-let currentPlayer = '';
-let currentMode = 'addition';
-let maxNumber = 20;
-let currentAnswer = 0;
-let streak = 0;
-let dailyScore = 0;
+let currentPlayer = null;
+let currentEquation = {};
 let gameScore = 0;
-let lastPlayDate = '';
-let avatar = '';
-let topScores = JSON.parse(localStorage.getItem('topScores')) || [];
 
-function showScreen(screenId){
-  document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
-  document.getElementById(screenId).style.display = 'block';
+const avatars = [
+  "https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar1.jpg",
+  "https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar2.jpg",
+  "https://raw.githubusercontent.com/miraimari/cozy-math-game/main/avatar3.jpg"
+];
+
+// Show screen
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === "topScoresScreen") loadTopScores();
+  if (id === "loadScreen") loadPlayerInfo();
 }
 
-function startGame(){
-  currentPlayer = document.getElementById('playerName').value.trim();
-  if(!currentPlayer){
-    alert('Please enter your name!');
-    return;
+// Load player info on load screen
+function loadPlayerInfo() {
+  const name = document.getElementById("playerName").value.trim();
+  if (!name) return;
+  let players = JSON.parse(localStorage.getItem("players") || "{}");
+  if (!players[name]) return;
+
+  const p = players[name];
+  const today = new Date().toISOString().split("T")[0];
+  let streakMessage = "";
+
+  if (p.lastPlayed && p.lastPlayed < today) {
+    streakMessage = "😢 Oh no " + name + "! You missed a day, streak reset!";
+    p.streak = 0;
+  } else if (p.lastPlayed === today) {
+    streakMessage = "🎉 Welcome back, " + name + "! Keep going!";
   }
-  currentMode = document.getElementById('modeSelect').value;
-  maxNumber = parseInt(document.getElementById('maxNumber').value);
-  loadPlayerData();
+
+  players[name] = p;
+  localStorage.setItem("players", JSON.stringify(players));
+
+  document.getElementById("streakInfo").textContent = streakMessage;
+  document.getElementById("avatarPreview").innerHTML = p.avatar ? `<img src="${p.avatar}">` : "";
+}
+
+// Start game
+function startGame() {
+  const name = document.getElementById("playerName").value.trim();
+  if (!name) { alert("Enter your name!"); return; }
+
+  let players = JSON.parse(localStorage.getItem("players") || "{}");
+  if (!players[name]) {
+    players[name] = { avatar: "", streak: 0, lastPlayed: "", dailyScore: 0, highestStreak: 0, highScore: 0 };
+  }
+  currentPlayer = name;
+  localStorage.setItem("players", JSON.stringify(players));
+
   gameScore = 0;
-  showScreen('gameScreen');
-  nextQuestion();
+  document.getElementById("gameScore").textContent = gameScore;
+  document.getElementById("dailyScore").textContent = players[name].dailyScore;
+  document.getElementById("streakCount").textContent = players[name].streak;
+  document.getElementById("greeting").textContent = "Hi " + name + "!";
+  document.getElementById("gameAvatar").innerHTML = players[name].avatar ? `<img src="${players[name].avatar}" width="80">` : "";
+
+  newEquation();
+  showScreen("gameScreen");
 }
 
-function backToLoad(){
-  showScreen('loadScreen');
-  updateLoadScreen();
+// New math equation
+function newEquation() {
+  let a = Math.floor(Math.random() * 10);
+  let b = Math.floor(Math.random() * 10);
+  currentEquation = { q: `${a} + ${b}`, ans: a + b };
+  document.getElementById("equation").textContent = currentEquation.q;
+  document.getElementById("answer").value = "";
 }
 
-function showAvatarScreen(){
-  showScreen('avatarScreen');
-  const savedAvatar = localStorage.getItem(currentPlayer + '_avatar');
-  document.querySelectorAll('img.avatar').forEach(img=>{
-    img.classList.remove('selected');
-    if(savedAvatar && img.src === savedAvatar) img.classList.add('selected');
-  });
-}
+// Check answer
+function checkAnswer() {
+  const ans = parseInt(document.getElementById("answer").value);
+  const players = JSON.parse(localStorage.getItem("players") || "{}");
+  const p = players[currentPlayer];
+  const today = new Date().toISOString().split("T")[0];
 
-function selectAvatar(img){
-  avatar = img.src;
-  localStorage.setItem(currentPlayer + '_avatar', avatar);
-  document.querySelectorAll('img.avatar').forEach(i=>i.classList.remove('selected'));
-  img.classList.add('selected');
-}
-
-function nextQuestion(){
-  let num1 = Math.floor(Math.random() * (maxNumber+1));
-  let num2 = Math.floor(Math.random() * (maxNumber+1));
-  let operator = currentMode;
-  if(currentMode==='mixed'){
-    operator = Math.random() < 0.5 ? 'addition' : 'subtraction';
-  }
-  if(operator==='subtraction' && num2>num1){
-    [num1,num2] = [num2,num1];
-  }
-  currentAnswer = operator==='addition'? num1+num2 : num1-num2;
-  document.getElementById('question').innerText = `${num1} ${operator==='addition'?'+':'-'} ${num2} = ?`;
-  document.getElementById('answerInput').value = '';
-  document.getElementById('feedback').innerText = '';
-}
-
-function pressKey(digit){
-  document.getElementById('answerInput').value += digit;
-}
-
-function clearInput(){
-  document.getElementById('answerInput').value = '';
-}
-
-function submitAnswer(){
-  const userAnswer = parseInt(document.getElementById('answerInput').value);
-  if(userAnswer===currentAnswer){
+  if (ans === currentEquation.ans) {
     gameScore++;
-    incrementDailyScore();
-    handleStreak(true);
-    document.getElementById('feedback').innerText = `🎉 Awesome, ${currentPlayer}, that is correct! Your streak is now ${streak} days!`;
-    setTimeout(nextQuestion,2000);
-  }else{
-    handleStreak(false);
-    document.getElementById('feedback').innerText = `❌ Try again!`;
-  }
-}
+    p.dailyScore++;
+    document.getElementById("feedback").textContent = "✅ Correct!";
+    document.getElementById("gameScore").textContent = gameScore;
+    document.getElementById("dailyScore").textContent = p.dailyScore;
 
-function incrementDailyScore(){
-  const today = new Date().toDateString();
-  let storedDate = localStorage.getItem(currentPlayer + '_dailyDate');
-  if(storedDate!==today){
-    dailyScore = 1;
-    localStorage.setItem(currentPlayer + '_dailyDate', today);
+    // Streak update (only first correct per day)
+    if (p.lastPlayed !== today) {
+      p.streak++;
+      document.getElementById("streakCount").textContent = p.streak;
+      document.getElementById("feedback").textContent = `🎉 Awesome, ${currentPlayer}, that is correct! Your streak is now ${p.streak} days!`;
+    }
+
+    // Update highest streak & high score
+    if (p.streak > p.highestStreak) p.highestStreak = p.streak;
+    if (gameScore > p.highScore) p.highScore = gameScore;
+
+    p.lastPlayed = today;
+    players[currentPlayer] = p;
+    localStorage.setItem("players", JSON.stringify(players));
+    newEquation();
   } else {
-    dailyScore++;
+    document.getElementById("feedback").textContent = "❌ Try again!";
   }
-  localStorage.setItem(currentPlayer + '_dailyScore', dailyScore);
 }
 
-function handleStreak(correct){
-  const today = new Date().toDateString();
-  let lastDate = localStorage.getItem(currentPlayer + '_lastStreakDate');
-  if(lastDate && lastDate!==today){
-    const diff = (new Date(today) - new Date(lastDate))/86400000;
-    if(diff>1) streak=0;
+// Exit game
+function exitGame() {
+  showScreen("loadScreen");
+}
+
+// Load Top Scores
+function loadTopScores() {
+  const players = JSON.parse(localStorage.getItem("players") || "{}");
+  let rows = "";
+  for (const [name, p] of Object.entries(players)) {
+    rows += `<tr>
+      <td>${name}</td>
+      <td>${p.highScore || 0}</td>
+      <td>${p.highestStreak || 0}</td>
+    </tr>`;
   }
-  if(correct){
-    streak++;
-  } else {
-    streak=0;
-  }
-  localStorage.setItem(currentPlayer + '_streak', streak);
-  localStorage.setItem(currentPlayer + '_lastStreakDate', today);
+  document.getElementById("scoresTable").innerHTML = rows;
 }
 
-function loadPlayerData(){
-  const storedStreak = parseInt(localStorage.getItem(currentPlayer + '_streak')) || 0;
-  streak = storedStreak;
-  dailyScore = parseInt(localStorage.getItem(currentPlayer + '_dailyScore')) || 0;
-  lastPlayDate = localStorage.getItem(currentPlayer + '_lastStreakDate') || '';
-  avatar = localStorage.getItem(currentPlayer + '_avatar') || '';
-  updateLoadScreen();
-}
-
-function updateLoadScreen(){
-  document.getElementById('streakDisplay').innerText = `Streak: ${streak} days`;
-  document.getElementById('dailyScoreDisplay').innerText = `Daily Score: ${dailyScore}`;
-}
-
-function showTopScores(){
-  showScreen('topScoresScreen');
-  let scoresList = '';
-  topScores.sort((a,b)=>b.score-b.score);
-  topScores.forEach(s=>{
-    scoresList += `<div class="top-score-item">${s.name} - Score: ${s.score}, Streak: ${s.streak}</div>`;
+// Avatar screen
+function loadAvatars() {
+  let html = "";
+  avatars.forEach((src, i) => {
+    html += `<img src="${src}" class="avatar-option" onclick="selectAvatar('${src}', this)">`;
   });
-  document.getElementById('topScoresList').innerHTML = scoresList;
+  document.getElementById("avatarChoices").innerHTML = html;
+}
+function selectAvatar(src, el) {
+  const name = document.getElementById("playerName").value.trim();
+  if (!name) { alert("Enter your name first!"); return; }
+
+  let players = JSON.parse(localStorage.getItem("players") || "{}");
+  if (!players[name]) players[name] = { avatar: "", streak: 0, lastPlayed: "", dailyScore: 0, highestStreak: 0, highScore: 0 };
+  players[name].avatar = src;
+  localStorage.setItem("players", JSON.stringify(players));
+
+  document.querySelectorAll(".avatar-option").forEach(img => img.classList.remove("selected"));
+  el.classList.add("selected");
+  alert("Avatar selected!");
 }
 
-function updateTopScores(){
-  const playerScoreIndex = topScores.findIndex(p=>p.name===currentPlayer);
-  if(playerScoreIndex>-1){
-    topScores[playerScoreIndex].score = Math.max(topScores[playerScoreIndex].score, gameScore);
-    topScores[playerScoreIndex].streak = Math.max(topScores[playerScoreIndex].streak, streak);
-  } else {
-    topScores.push({name: currentPlayer, score: gameScore, streak: streak});
-  }
-  localStorage.setItem('topScores', JSON.stringify(topScores));
-}
-
-window.addEventListener('beforeunload',()=>{
-  updateTopScores();
-});
-
-showScreen('loadScreen');
+window.onload = loadAvatars;
 </script>
 
 </body>
